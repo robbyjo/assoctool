@@ -1,0 +1,260 @@
+{
+  "name": "assoctool",
+  "title": "assoctool",
+  "summary": "Your Swiss army knife for your association analysis needs",
+  "tags": [
+    "Statistics"
+  ],
+  "dxapi": "1.0.0",
+  "inputSpec": [
+    {
+      "name": "omics_file",
+      "label": "Main data file",
+      "help": "Num markers x num obs. Must have header and row name.",
+      "class": "file",
+      "patterns": ["*.txt", "*.csv", "*.Rda", "*.Rds", "*.RData", "*.rda", "*.rds"],
+      "optional": false
+    },
+    {
+      "name": "pheno_file",
+      "label": "Phenotype file",
+      "help": "Num obs x num variables. Must have header. Note: any column names with spaces or punctuations will be mangled as per R convention.",
+      "class": "file",
+      "patterns": ["*.txt", "*.csv"],
+      "optional": false
+    },
+    {
+      "name": "pheno_filter_criteria",
+      "label": "Phenotype filter criteria",
+      "help": "R-style expression. This is for prefiltering your phenotype (and thus your main data). Example: Supplement==0 & Cancer==0. In that example, your phenotype file MUST have Supplement and Cancer columns.",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "output_file",
+      "label": "Output file name",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "save_as_binary",
+      "label": "Save as binary",
+      "help": "Save the output as binary (.rds format)?",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    },
+    {
+      "name": "id_col",
+      "label": "ID column",
+      "help": "Column name in phenotypic file indicating the ID. This column will be matched with the main data's row name.",
+      "class": "string",
+      "optional": false,
+      "default": "ID"
+    },
+    {
+      "name": "factors_list",
+      "label": "Factor variables",
+      "help": "Column names in phenotypic file that should be treated as factors instead of numeric. A comma separated list. This is useful when your batches are in numeric values.",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "method",
+      "label": "Method",
+      "help": "Method string. If you specify custom method, MAKE SURE you fill in analysis code.",
+      "class": "string",
+      "optional": false,
+	  "choices": ["LM", "LMM", "GLM", "GLMM", "NLS", "NLMM", "PEDIGREEMM", "KINSHIP1", "KINSHIP2", "LOGISTF", "RLM", "POLR", "SURVIVAL", "COXME", "GEE", "GEEGLM", "ORDGEE", "ZEROINFL", "GLMNB", "CENSREG", "TRUNCREG", "BETAREG", "QUANTREG", "MLOGIT", "RELOGIT", "GAMLSS", "ZELIG", "CUSTOM"],
+      "default": "LMM"
+    },
+    {
+      "name": "formula",
+      "label": "Formula",
+      "help": "R-style formula for your association analysis. Note: Your omic data will be named 'y'. But you can override this below.",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "omics_var_name",
+      "label": "Omics variable name",
+      "help": "The variable name with which your omics dataset will be named. Default is 'y'.",
+      "class": "string",
+      "optional": false,
+      "default": "y"
+    },
+    {
+      "name": "result_var_name",
+      "label": "Result variable names",
+      "help": "Comma-separated variable names to output into the result table. Your formula may contain multiple terms. By default, assoctool will output the P-value, Beta (Fx), SE, T, and occasionally R^2 (RSq) for all terms. You may limit the output to certain variables only (comma separated). Note that the search is string-based and thus not fool-proof. Also, if your variables of interest are categorical, sometimes they have an extra suffix. Example: sexM or vitcTertile1 or vitcTertile2. Simply mentioning sex or vitc would work, but it may also catch sexhormone, for example.",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "fn_param_list",
+      "label": "Function parameter list",
+      "help": "Comma-separated parameter list that you pass to the main analysis function. Must be valid R expression. For example: You want a weighted regression in LMM (for which lme4's lmer will be called) and you store the weights in the phenotype file in column called 'WGTs'. In addition, you want an maximum likelihood fit rather than the default REML. So you would list 'weights=pdata[, \"WGTs\"],REML=FALSE'",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "annot_file",
+      "label": "Annotation file",
+      "help": "Annotation file for filtering variants / markers. If not specified, then no filtering is done",
+      "class": "file",
+      "patterns": ["*.txt", "*.csv", "*.Rda", "*.Rds", "*.RData", "*.rda", "*.rds"],
+      "optional": true
+    },
+    {
+      "name": "annot_marker_id",
+      "label": "Annotation Marker ID",
+      "help": "The column name in the annotation file that indicates marker ID. You must fill this if you fill in annotation file.",
+      "class": "string",
+      "optional": false
+    },
+    {
+      "name": "annot_filter_criteria",
+      "label": "Annotation filter criteria",
+      "help": "R-style expression. Example: MAF>=0.01 & Chr==\"19\". In that example, your annotation file MUST have MAF and Chr columns. You must fill this if you fill in annotation file.",
+      "class": "string",
+      "optional": false
+    },
+     {
+      "name": "annot_cols",
+      "label": "Annotation columns",
+      "help": "Comma-separated annotation column list indicating which columns (in that order) you want to annotate your results with. Leave blank if you do not want to annotate your results.",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "pedigree_file",
+      "label": "Pedigree file",
+      "help": "Pedigree file for pedigree-based analysis. If you fill one in, you MUST fill in the pedigree ID, father and mother IDs.",
+      "class": "file",
+      "patterns": ["*.txt", "*.csv"],
+      "optional": true
+    },
+    {
+      "name": "pedigree_type",
+      "label": "Pedigree type",
+      "help": "Pedigree type.",
+      "class": "string",
+      "optional": true,
+	  "choices": ["KINSHIP1", "KINSHIP2", "PEDIGREEMM", "SPARSE_MATRIX", "DENSE_MATRIX"],
+      "default": "PEDIGREEMM"
+    },
+    {
+      "name": "pedigree_id_col",
+      "label": "Pedigree ID column",
+      "help": "Column name in phenotypic file indicating the ID for matching the IDs in the pedigree file. This is useful when you have multiple ID sets (as a typical big project would have)---the main data uses one set of IDs, while the pedigree is specified under another set of IDs. By default, this is the same as the main ID (i.e., id_col).",
+      "class": "string",
+      "optional": true,
+      "default": "ID"
+    },
+    {
+      "name": "pedigree_id",
+      "label": "IDs in the pedigree",
+      "help": "The column name in the pedigree file that indicates individual ID. The IDs in pedigree file will be matched with the IDs in the phenotype file. The ID column in pedigree file can be named differently than that in the phenotype file. You must fill this if you fill in pedigree file.",
+      "class": "string",
+      "optional": false,
+      "default": "ID"
+    },
+    {
+      "name": "pedigree_father",
+      "label": "Father IDs in the pedigree",
+      "help": "The column name in the pedigree file that indicates father's IDs. You must fill this if you fill in pedigree file.",
+      "class": "string",
+      "optional": false,
+      "default": "father"
+    },
+    {
+      "name": "pedigree_mother",
+      "label": "Mother IDs in the pedigree",
+      "help": "The column name in the pedigree file that indicates mother's IDs. You must fill this if you fill in pedigree file.",
+      "class": "string",
+      "optional": false,
+      "default": "mother"
+    },
+    {
+      "name": "pedigree_sex",
+      "label": "Sex in the pedigree",
+      "help": "The column indicating sex in the pedigree file. Needed only in kinship.",
+      "class": "string",
+      "optional": false,
+      "default": "sex"
+    },
+    {
+      "name": "analysis_code",
+      "label": "Analysis code file",
+      "help": "R source code for custom analysis. Make sure you define function doOne(i). This function does the analysis of one association.",
+      "class": "file",
+      "patterns": ["*.R", "*.r"],
+      "optional": true
+    },
+    {
+      "name": "prologue_code",
+      "label": "Prologue code file",
+      "help": "R source code for custom preprocessing. This code will be loaded right after all the data (main, phenotype, pedigree, annotation) are loaded and prepared.",
+      "class": "file",
+      "patterns": ["*.R", "*.r"],
+      "optional": true
+    },
+    {
+      "name": "epilogue_code",
+      "label": "Epilogue code file",
+      "help": "R source code for custom postprocessing. This code will be loaded right before the output is saved.",
+      "class": "file",
+      "patterns": ["*.R", "*.r"],
+      "optional": true
+    },
+    {
+      "name": "tx_fun",
+      "label": "Transform function",
+      "help": "R function to indicate custom transformation done on the main table. Example: For a crude Inverse Normal Transform (INT), you put in: 'function(x) qqnorm(as.numeric(x), plot.it=FALSE)$x' or for Z-transform: 'function(x) scale(as.numeric(x), center=TRUE, scale=TRUE)'",
+      "class": "string",
+      "optional": true
+    },
+    {
+      "name": "num_cores",
+      "help": "The number of cores (at least one) you wish to use for the analysis. If you leave it blank or fill it with invalid values, the program will try to use the maximum number available.",
+      "class": "int",
+      "optional": true
+    },
+    {
+      "name": "debug",
+	  "label": "Debug output",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "results",
+      "class": "file"
+    }
+  ],
+  "runSpec": {
+    "execDepends": [
+      {
+        "name": "libxml2-dev"
+      }
+    ],
+    "systemRequirements": {
+      "main": {
+        "instanceType": "mem3_ssd1_x32"
+      }
+    },
+    "file": "src/code.sh",
+    "release": "14.04",
+    "interpreter": "bash",
+    "distribution": "Ubuntu"
+  },
+  "access": {
+    "project": "CONTRIBUTE",
+    "allProjects": "CONTRIBUTE",
+    "network": [
+      "*"
+    ]
+  }
+}
