@@ -57,10 +57,11 @@ main() {
     echo "Value of num_cores: '$num_cores'"
     echo "Value of debug: '$debug'"
 
-    PARMS=(--omics_file="$omics_file")
-    dx download "$omics_file" &
-    PARMS+=(--pheno_file="$pheno_file")
-    dx download "$pheno_file" &
+    mkdir -p /data/
+    PARMS=(--omics_file="/data/${omics_file}")
+    dx download "$omics_file" -o "/data/${omics_file}" &
+    PARMS+=(--pheno_file="/data/${pheno_file}")
+    dx download "$pheno_file" -o "/data/${pheno_file}" &
 
 # Required parameters
     PARMS+=(--output_file=results)
@@ -87,16 +88,16 @@ main() {
         PARMS+=(--fn_param_list="$fn_param_list")
     fi
     if [[ "$prologue_code" != "" ]] ; then
-        PARMS+=(--prologue_code="$prologue_code")
-        dx download "$prologue_code"   &
+        PARMS+=(--prologue_code="/data/${prologue_code}")
+        dx download "$prologue_code" -o "/data/${prologue_code}" &
     fi
     if [[ "$epilogue_code" != "" ]] ; then
-        PARMS+=(--epilogue_code="$epilogue_code")
-        dx download "$epilogue_code"   &
+        PARMS+=(--epilogue_code="/data/${epilogue_code}")
+        dx download "$epilogue_code" -o "/data/${epilogue_code}" &
     fi
     if [[ "$analysis_code" != "" ]] ; then
-        PARMS+=(--analysis_code="$analysis_code")
-        dx download "$analysis_code"   &
+        PARMS+=(--analysis_code="/data/${analysis_code}")
+        dx download "$analysis_code" -o "/data/${analysis_code}" &
     fi
     if [[ "$omics_var_name" != "" ]] ; then
         PARMS+=(--omics_var_name="$omics_var_name")
@@ -123,8 +124,8 @@ main() {
     fi
 
     if [[ "$pedigree_file" != "" ]] ; then
-        PARMS+=(--pedigree_file="$pedigree_file")
-        dx download "$pedigree_file"   &
+        PARMS+=(--pedigree_file="/data/${pedigree_file}")
+        dx download "$pedigree_file" -o "/data/${pedigree_file}" &
     fi
     if [[ "$pedigree_id_col" != "" ]] ; then
         PARMS+=(--pedigree_id_col="$pedigree_id_col")
@@ -177,7 +178,7 @@ main() {
  
     echo "Rscript assoctool.R ${PARMS[@]}"
     echo "Running code"
-    Rscript assoctool.R "${PARMS[@]}"
+    dx-docker run -v /data/:/data/ robbyjo/r-mkl-assoctool:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file
