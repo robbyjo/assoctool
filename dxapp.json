@@ -261,10 +261,11 @@
     "distribution": "Ubuntu"
   },
   "access": {
-    "project": "CONTRIBUTE",
-    "allProjects": "CONTRIBUTE",
     "network": [
       "*"
     ]
-  }
+  },
+  "authorizedUsers" : [
+    "*"
+  ]
 }
