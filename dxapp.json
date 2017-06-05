@@ -29,7 +29,7 @@
       "label": "Phenotype filter criteria",
       "help": "R-style expression. This is for prefiltering your phenotype (and thus your main data). Example: Supplement==0 & Cancer==0. In that example, your phenotype file MUST have Supplement and Cancer columns.",
       "class": "string",
-      "optional": false
+      "optional": true
     },
     {
       "name": "output_file",
@@ -120,14 +120,14 @@
       "label": "Annotation Marker ID",
       "help": "The column name in the annotation file that indicates marker ID. You must fill this if you fill in annotation file.",
       "class": "string",
-      "optional": false
+      "optional": true
     },
     {
       "name": "annot_filter_criteria",
       "label": "Annotation filter criteria",
       "help": "R-style expression. Example: MAF>=0.01 & Chr==\"19\". In that example, your annotation file MUST have MAF and Chr columns. You must fill this if you fill in annotation file.",
       "class": "string",
-      "optional": false
+      "optional": true
     },
      {
       "name": "annot_cols",
@@ -166,7 +166,7 @@
       "label": "IDs in the pedigree",
       "help": "The column name in the pedigree file that indicates individual ID. The IDs in pedigree file will be matched with the IDs in the phenotype file. The ID column in pedigree file can be named differently than that in the phenotype file. You must fill this if you fill in pedigree file.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "ID"
     },
     {
@@ -174,7 +174,7 @@
       "label": "Father IDs in the pedigree",
       "help": "The column name in the pedigree file that indicates father's IDs. You must fill this if you fill in pedigree file.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "father"
     },
     {
@@ -182,7 +182,7 @@
       "label": "Mother IDs in the pedigree",
       "help": "The column name in the pedigree file that indicates mother's IDs. You must fill this if you fill in pedigree file.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "mother"
     },
     {
@@ -190,7 +190,7 @@
       "label": "Sex in the pedigree",
       "help": "The column indicating sex in the pedigree file. Needed only in kinship.",
       "class": "string",
-      "optional": false,
+      "optional": true,
       "default": "sex"
     },
     {
