@@ -6,7 +6,7 @@
     "Statistics"
   ],
   "dxapi": "1.0.0",
-  "version": "0.1",
+  "version": "0.0.1",
   "inputSpec": [
     {
       "name": "omics_file",
@@ -44,6 +44,15 @@
       "class": "boolean",
       "optional": true,
       "default": false
+    },
+    {
+      "name": "compress_output",
+      "label": "Compress output file",
+      "help": "Do you want to compress the output file? Not recommended if you select 'Save as binary' option",
+      "class": "string",
+      "choices": ["NONE", "GZIP", "BZ2", "XZ"],
+      "optional": true,
+      "default": "NONE"
     },
     {
       "name": "id_col",

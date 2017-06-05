@@ -1,7 +1,7 @@
 #!/bin/bash
-# assoctool 0.01
+# assoctool 0.0.1
 # Association analysis tool
-# Version: 0.1
+# Version: 0.0.1
 # By: Roby Joehanes
 #
 # Copyright 2016-2017 Roby Joehanes
@@ -24,6 +24,7 @@ main() {
     echo "Value of omics_file: '$omics_file'"
     echo "Value of output_file: '$output_file'"
     echo "Value of save_as_binary: '$save_as_binary'"
+    echo "Value of compress_output: '$compress_output'"
 
     echo "Value of pheno_file: '$pheno_file'"
     echo "Value of id_col: '$id_col"
@@ -150,22 +151,13 @@ main() {
         PARMS+=(--num_cores="$num_cores")
     fi
 
-    # install R
-    # add R to path 
-    
-    echo "INSTALLING PROGRAM"
-    make >> /dev/null & 
-    export PATH=/opt/R/bin/:${PATH}
-    export MKL_NUM_THREADS=1
     wait
-
     sudo chmod o+rw /tmp
     # wait if debug 
     if [ ${debug} -ne 0 ]
     then
-       echo "DEBUG is on sleeping for 1h"
+       echo "DEBUG is on ==="
        echo "Rscript assoctool.R ${PARMS[@]}"
-       sleep 1h
     fi
     wait
     echo "Checking phenofile" 
@@ -182,5 +174,15 @@ main() {
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file
+    if [[ $compress_output == "GZIP" ]] ; then
+       gzip -9 $results
+       results="${results}.gz"
+    elif [[ $compress_output == "BZ2" ]] ; then
+       bzip2 -9 $results
+       results="${results}.bz2"
+    elif [[ $compress_output == "XZ" ]] ; then
+       xz -9 $results
+       results="${results}.xz"
+    fi
     dx mv ${results} ${output_file}
 }
