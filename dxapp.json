@@ -1,11 +1,12 @@
 {
   "name": "assoctool",
-  "title": "assoctool",
-  "summary": "Your Swiss army knife for your association analysis needs",
+  "title": "Assoctool",
+  "summary": "App for association analyses",
   "tags": [
     "Statistics"
   ],
   "dxapi": "1.0.0",
+  "version": "0.1",
   "inputSpec": [
     {
       "name": "omics_file",
@@ -235,17 +236,17 @@
     }
   ],
   "runSpec": {
-    "execDepends": [
-      {
-        "name": "libxml2-dev"
+    "timeoutPolicy": [
+      "*": {
+        "days": 30
       }
     ],
     "systemRequirements": {
       "main": {
-        "instanceType": "mem3_ssd1_x32"
+        "instanceType": "mem2_ssd1_x32"
       }
     },
-    "file": "src/code.sh",
+    "file": "src/assoctool.sh",
     "release": "14.04",
     "interpreter": "bash",
     "distribution": "Ubuntu"
