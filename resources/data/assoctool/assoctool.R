@@ -50,7 +50,7 @@
 #args <- processArgs(args);
 
 default_code_path <- Sys.getenv("ASSOCTOOL_DIR");
-if (is.null(default_code_path) | default_code_path == "") default_code_path <- "/home/dnanexus/";
+if (is.null(default_code_path) | default_code_path == "") default_code_path <- "/data/";
 default_block_size <- 5000;
 
 source(paste(default_code_path, "utils.R", sep=""));
