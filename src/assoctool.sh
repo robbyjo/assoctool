@@ -35,6 +35,7 @@ main() {
     echo "Value of formula: '$formula'"
     echo "Value of tx_fun: '$tx_fun'"
     echo "Value of fn_param_list: '$fn_param_list'"
+    echo "Value of preload_code: '$preload_code'"
     echo "Value of prologue_code: '$prologue_code'"
     echo "Value of epilogue_code: '$epilogue_code'"
     echo "Value of analysis_code: '$analysis_code'"
@@ -87,6 +88,10 @@ main() {
     fi
     if [[ "$fn_param_list" != "" ]] ; then
         PARMS+=(--fn_param_list="$fn_param_list")
+    fi
+    if [[ "$preload_code" != "" ]] ; then
+        PARMS+=(--preload_code="/data/${preload_code}")
+        dx download "$preload_code" -o "/data/${preload_code}" &
     fi
     if [[ "$prologue_code" != "" ]] ; then
         PARMS+=(--prologue_code="/data/${prologue_code}")

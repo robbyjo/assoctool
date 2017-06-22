@@ -77,6 +77,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$formula_str <- args["formula"];
 	opt$tx_fun_str <- args["tx_fun"];
 	opt$fn_param_list <- args["fn_param_list"];
+	opt$preload_code <- args["preload_code"];
 	opt$prologue_code <- args["prologue_code"];
 	opt$epilogue_code <- args["epilogue_code"];
 	opt$analysis_code <- args["analysis_code"];
@@ -186,107 +187,122 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 suppressMessages(library(data.table));
 suppressMessages(library(filematrix));
 
-# Phenotype data loading
-# Assumption: rows = num samples, cols = num phenotypes
-pdata <- data.frame(fread(opt$pheno_file), check.names=FALSE, stringsAsFactors=FALSE);
-cat("Phenotype file has been loaded. Dimension:", dim(pdata), "\n");
-# Double check the IDs in the phenotype data and the methylation data!
-if (!(opt$id_col %in% colnames(pdata))) stop(paste(opt$id_col, "is not in phenotype file!"));
-if (!is.na(opt$pheno_filter_criteria)) {
-	pdata <- data.table(pdata);
-	pdata <- pdata[eval(parse(text=opt$pheno_filter_criteria))]
-	pdata <- data.frame(pdata, check.names=FALSE, stringsAsFactors=FALSE);
-	cat("Phenotype file has been filtered. Dimension:", dim(pdata), "\n");
+opt$skip_loading_phenotype <- FALSE;
+opt$skip_loading_omics <- FALSE;
+opt$skip_loading_pedigree <- FALSE;
+opt$skip_loading_annotation <- FALSE;
+
+# Preloading code can override the options above
+if (!is.na(opt$preload_code)) {
+	cat ("Loading pre-loading code...", opt$preload_code, "\n");
+	source(opt$preload_code);
 }
 
-#Make sure chip, row, and column effects are factors
-if (!is.na(opt$factors_list)) {
-	cat("Converting to factors:", opt$factors_list, "\n");
-	for (..factor in unlist(strsplit(opt$factors_list, ","))) {
-		..factor <- trim(..factor);
-		pdata[, ..factor] <- as.factor(pdata[, ..factor]);
+if (!opt$skip_loading_phenotype) {
+	# Phenotype data loading
+	# Assumption: rows = num samples, cols = num phenotypes
+	pdata <- data.frame(fread(opt$pheno_file), check.names=FALSE, stringsAsFactors=FALSE);
+	cat("Phenotype file has been loaded. Dimension:", dim(pdata), "\n");
+	# Double check the IDs in the phenotype data and the methylation data!
+	if (!(opt$id_col %in% colnames(pdata))) stop(paste(opt$id_col, "is not in phenotype file!"));
+	if (!is.na(opt$pheno_filter_criteria)) {
+		pdata <- data.table(pdata);
+		pdata <- pdata[eval(parse(text=opt$pheno_filter_criteria))]
+		pdata <- data.frame(pdata, check.names=FALSE, stringsAsFactors=FALSE);
+		cat("Phenotype file has been filtered. Dimension:", dim(pdata), "\n");
 	}
-	rm(..factor);
+
+	#Make sure chip, row, and column effects are factors
+	if (!is.na(opt$factors_list)) {
+		cat("Converting to factors:", opt$factors_list, "\n");
+		for (..factor in unlist(strsplit(opt$factors_list, ","))) {
+			..factor <- trim(..factor);
+			pdata[, ..factor] <- as.factor(pdata[, ..factor]);
+		}
+		rm(..factor);
+	}
 }
 
-# Load pedigree if any
-if (!is.na(opt$pedigree_file)) {
-	cat("Loading pedigree file:", opt$pedigree_file, "\n");
-	..fn <- tolower(opt$pedigree_file);
-	if (endsWith(..fn, ".rds")) {
-		cat("Loading", opt$pedigree_file, "as RDS...\n");
-		ped <- readRDS(opt$pedigree_file);
-		#if (class(ped) != "matrix") ped <- as.matrix(ped);
-	} else if (endsWith(..fn, ".rda") | endsWith(..fn, ".rdata")) {
-		cat("Loading", opt$pedigree_file, "as RDa...\n");
-		..vv <- load(opt$pedigree_file);
-		..ii <- 1;
-		..lv <- length(..vv);
-		if (..lv == 0) stop(paste(opt$pedigree_file, "contains no data!"));
-		if (..lv > 1) {
-			cat("NOTE: File", opt$pedigree_file, "contains multiple objects\n");
-			..ss <- rep(0, ..lv);
-			for (i in 1:..lv) ..ss[i] <- object.size(eval(parse(text=..vv[i])));
-			..ii <- which.max(..ss);
-			rm(..ss);
-		}
-		cat("Taking the largest object as the pedigree:", ..vv[..ii], "\n");
-		ped <- eval(parse(text=..vv[..ii]));
-		rm(list=..vv[..ii]); # We will not delete the other objects
-		rm(..vv, ..ii, ..lv);
-		#if (class(ped) != "matrix") ped <- as.matrix(ped);
-	} else {
-		cat("Loading", opt$pedigree_file, "as text. Constructing sibship.\n");
-		ped_data <- data.frame(fread(opt$pedigree_file), check.names=FALSE, stringsAsFactors=FALSE);
-		cat("Pedigree file has been loaded. Dimension:", dim(ped_data), "\n");
-		..kid_ids <- ped_data[, opt$pedigree_id];
-		..dad_ids <- ped_data[, opt$pedigree_father];
-		..mom_ids <- ped_data[, opt$pedigree_mother];
-		
-		# Is there anyone with missing pedigree?
-		..has_missing_ped <- !(as.character(pdata[, opt$pedigree_id_col]) %in% as.character(..kid_ids));
-		if (sum(!..has_missing_ped) == 0) stop("The IDs in the pedigree file does NOT match at all with the IDs in the phenotype file!");
-		if (sum(..has_missing_ped) > 0) {
-			cat("WARNING: Not all IDs in phenotype file has pedigree data. Assuming singletons.\n");
-			..missing_ids <- pdata[..has_missing_ped, opt$pedigree_id_col];
-			..kid_ids <- c(..kid_ids, ..missing_ids);
-			..dad_ids <- c(..dad_ids, rep(NA, length(..missing_ids)));
-			..mom_ids <- c(..mom_ids, rep(NA, length(..missing_ids)));
-			rm(..missing_ids);
-		}
-		rm(..has_missing_ped);
-		if (opt$pedigree_type == "kinship1") {
-			if (!(opt$method %in% c("lmm", "kinship1", "coxme"))) stop("Pedigree type 'kinship1' is only supported in LMM or COXME!");
-			suppressMessages(library(kinship));
-			..fam_id <- makefamid(factor(..kid_ids), ..dad_ids, ..mom_ids);
-			ped <- makekinship(..fam_id, factor(..kid_ids), ..dad_ids, ..mom_ids);
-			opt$method <- "kinship1";
-		} else if (opt$pedigree_type == "kinship2") {
-			if (!(opt$method %in% c("lmm", "kinship2", "coxme"))) stop("Pedigree type 'kinship2' is only supported in LMM or COXME!");
-			suppressMessages(library(kinship2));
-			suppressMessages(library(coxme));
-			if (is.na(opt$pedigree_sex)) {
-				cat("WARNING: pedigree_sex is missing, trying to reconstruct the matrix using makekinship. May be significantly slower.")
+if (!opt$skip_loading_pedigree) {
+	# Load pedigree if any
+	if (!is.na(opt$pedigree_file)) {
+		cat("Loading pedigree file:", opt$pedigree_file, "\n");
+		..fn <- tolower(opt$pedigree_file);
+		if (endsWith(..fn, ".rds")) {
+			cat("Loading", opt$pedigree_file, "as RDS...\n");
+			ped <- readRDS(opt$pedigree_file);
+			#if (class(ped) != "matrix") ped <- as.matrix(ped);
+		} else if (endsWith(..fn, ".rda") | endsWith(..fn, ".rdata")) {
+			cat("Loading", opt$pedigree_file, "as RDa...\n");
+			..vv <- load(opt$pedigree_file);
+			..ii <- 1;
+			..lv <- length(..vv);
+			if (..lv == 0) stop(paste(opt$pedigree_file, "contains no data!"));
+			if (..lv > 1) {
+				cat("NOTE: File", opt$pedigree_file, "contains multiple objects\n");
+				..ss <- rep(0, ..lv);
+				for (i in 1:..lv) ..ss[i] <- object.size(eval(parse(text=..vv[i])));
+				..ii <- which.max(..ss);
+				rm(..ss);
+			}
+			cat("Taking the largest object as the pedigree:", ..vv[..ii], "\n");
+			ped <- eval(parse(text=..vv[..ii]));
+			rm(list=..vv[..ii]); # We will not delete the other objects
+			rm(..vv, ..ii, ..lv);
+			#if (class(ped) != "matrix") ped <- as.matrix(ped);
+		} else {
+			cat("Loading", opt$pedigree_file, "as text. Constructing sibship.\n");
+			ped_data <- data.frame(fread(opt$pedigree_file), check.names=FALSE, stringsAsFactors=FALSE);
+			cat("Pedigree file has been loaded. Dimension:", dim(ped_data), "\n");
+			..kid_ids <- ped_data[, opt$pedigree_id];
+			..dad_ids <- ped_data[, opt$pedigree_father];
+			..mom_ids <- ped_data[, opt$pedigree_mother];
+			
+			# Is there anyone with missing pedigree?
+			..has_missing_ped <- !(as.character(pdata[, opt$pedigree_id_col]) %in% as.character(..kid_ids));
+			if (sum(!..has_missing_ped) == 0) stop("The IDs in the pedigree file does NOT match at all with the IDs in the phenotype file!");
+			if (sum(..has_missing_ped) > 0) {
+				cat("WARNING: Not all IDs in phenotype file has pedigree data. Assuming singletons.\n");
+				..missing_ids <- pdata[..has_missing_ped, opt$pedigree_id_col];
+				..kid_ids <- c(..kid_ids, ..missing_ids);
+				..dad_ids <- c(..dad_ids, rep(NA, length(..missing_ids)));
+				..mom_ids <- c(..mom_ids, rep(NA, length(..missing_ids)));
+				rm(..missing_ids);
+			}
+			rm(..has_missing_ped);
+			if (opt$pedigree_type == "kinship1") {
+				if (!(opt$method %in% c("lmm", "kinship1", "coxme"))) stop("Pedigree type 'kinship1' is only supported in LMM or COXME!");
+				suppressMessages(library(kinship));
 				..fam_id <- makefamid(factor(..kid_ids), ..dad_ids, ..mom_ids);
 				ped <- makekinship(..fam_id, factor(..kid_ids), ..dad_ids, ..mom_ids);
-			} else {
-				ped <- kinship(pedigree(factor(..kid_ids), ..dad_ids, ..mom_ids, pdata[, opt$pedigree_sex]));
+				opt$method <- "kinship1";
+			} else if (opt$pedigree_type == "kinship2") {
+				if (!(opt$method %in% c("lmm", "kinship2", "coxme"))) stop("Pedigree type 'kinship2' is only supported in LMM or COXME!");
+				suppressMessages(library(kinship2));
+				suppressMessages(library(coxme));
+				if (is.na(opt$pedigree_sex)) {
+					cat("WARNING: pedigree_sex is missing, trying to reconstruct the matrix using makekinship. May be significantly slower.")
+					..fam_id <- makefamid(factor(..kid_ids), ..dad_ids, ..mom_ids);
+					ped <- makekinship(..fam_id, factor(..kid_ids), ..dad_ids, ..mom_ids);
+				} else {
+					ped <- kinship(pedigree(factor(..kid_ids), ..dad_ids, ..mom_ids, pdata[, opt$pedigree_sex]));
+				}
+				ped <- makekinship(factor(..kid_ids), ..dad_ids, ..mom_ids);
+				diag(ped) <- 0.5;
+				opt$method <- "kinship2";
+			} else if (opt$pedigree_type == "pedigreemm") {
+				if (!(opt$method %in% c("lmm", "glmm", "pedigreemm"))) stop("Pedigree type 'pedigreemm' is only supported in LMM or GLMM!");
+				..ped_struct <- constructPedigree(..kid_ids, ..dad_ids, ..mom_ids);
+				ped <- list(new_ids = ..ped_struct[["ped"]]);
+				opt$method <- "pedigreemm";
+				ped_data <- cbind(ped_data, ..ped_struct[["tbl"]]);
+				..temp_ped <- ped_data[as.character(ped_data[,opt$pedigree_id]) %in% as.character(pdata[, opt$pedigree_id_col]), ];
+				..temp_ped <- ..temp_ped[match(as.character(pdata[, opt$pedigree_id_col]), as.character(..temp_ped[, opt$pedigree_id])), ];
+				pdata <- cbind(pdata, ..temp_ped[, c("new_ids", "fathers_ids", "mothers_ids")]);
+				rm(..temp_ped, ..ped_struct);
 			}
-			ped <- makekinship(factor(..kid_ids), ..dad_ids, ..mom_ids);
-			diag(ped) <- 0.5;
-			opt$method <- "kinship2";
-		} else if (opt$pedigree_type == "pedigreemm") {
-			if (!(opt$method %in% c("lmm", "glmm", "pedigreemm"))) stop("Pedigree type 'pedigreemm' is only supported in LMM or GLMM!");
-			..ped_struct <- constructPedigree(..kid_ids, ..dad_ids, ..mom_ids);
-			ped <- list(new_ids = ..ped_struct[["ped"]]);
-			opt$method <- "pedigreemm";
-			ped_data <- cbind(ped_data, ..ped_struct[["tbl"]]);
-			..temp_ped <- ped_data[as.character(ped_data[,opt$pedigree_id]) %in% as.character(pdata[, opt$pedigree_id_col]), ];
-			..temp_ped <- ..temp_ped[match(as.character(pdata[, opt$pedigree_id_col]), as.character(..temp_ped[, opt$pedigree_id])), ];
-			pdata <- cbind(pdata, ..temp_ped[, c("new_ids", "fathers_ids", "mothers_ids")]);
-			rm(..temp_ped, ..ped_struct);
+			rm(..kid_ids, ..dad_ids, ..mom_ids);
 		}
-		rm(..kid_ids, ..dad_ids, ..mom_ids);
 	}
 }
 
@@ -294,103 +310,113 @@ if (!is.na(opt$pedigree_file)) {
 # Assumption: rows = num markers, cols = num samples
 # The file is assumed to be big, so let's use fread to speed up the loading
 
-..fn <- tolower(opt$met_file);
-if (endsWith(..fn, ".rds")) {
-	cat("Loading", opt$met_file, "as RDS...\n");
-	mdata <- readRDS(opt$met_file);
-	if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
-} else if (endsWith(..fn, ".rda") | endsWith(..fn, ".rdata")) {
-	cat("Loading", opt$met_file, "as RDa...\n");
-	..vv <- load(opt$met_file);
-	..ii <- 1;
-	..lv <- length(..vv);
-	if (..lv == 0) stop(paste(opt$met_file, "contains no data!"));
-	if (..lv > 1) {
-		cat("NOTE: File", opt$met_file, "contains multiple objects\n");
-		..ss <- rep(0, ..lv);
-		for (i in 1:..lv) ..ss[i] <- object.size(eval(parse(text=..vv[i])));
-		..ii <- which.max(..ss);
-		rm(..ss);
+if (!opt$skip_loading_omics) {
+	..fn <- tolower(opt$met_file);
+	if (endsWith(..fn, ".rds")) {
+		cat("Loading", opt$met_file, "as RDS...\n");
+		mdata <- readRDS(opt$met_file);
+		if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
+	} else if (endsWith(..fn, ".rda") | endsWith(..fn, ".rdata")) {
+		cat("Loading", opt$met_file, "as RDa...\n");
+		..vv <- load(opt$met_file);
+		..ii <- 1;
+		..lv <- length(..vv);
+		if (..lv == 0) stop(paste(opt$met_file, "contains no data!"));
+		if (..lv > 1) {
+			cat("NOTE: File", opt$met_file, "contains multiple objects\n");
+			..ss <- rep(0, ..lv);
+			for (i in 1:..lv) ..ss[i] <- object.size(eval(parse(text=..vv[i])));
+			..ii <- which.max(..ss);
+			rm(..ss);
+		}
+		cat("Taking the largest object as mdata:", ..vv[..ii], "\n");
+		mdata <- eval(parse(text=..vv[..ii]));
+		rm(list=..vv[..ii]); # We will not delete the other objects
+		rm(..vv, ..ii, ..lv);
+		if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
+	} else if (endsWith(..fn, ".gds")) {
+		cat("Loading", opt$met_file, "as GDS...\n");
+		suppressMessages(library(SeqArray));
+		suppressMessages(library(SeqVarTools));
+		suppressMessages(library(gdsfmt));
+		mdata <- seqOpen(opt$met_file);
+	} else if (endsWith(..fn, ".bmat.tar")) {
+		cat("Loading", opt$met_file, "as .bmat.tar...\n");
+		..out <- untar(opt$met_file);
+		if (..out != 0) stop("Opening file failed!");
+		rm(..out);
+		mdata <- fm.open(gsub(".bmat.tar", "", opt$met_file, ignore.case=TRUE));
+	} else {
+		# Assume text
+		cat("Loading", opt$met_file, "as text...\n");
+		mdata <- data.frame(fread(opt$met_file), check.names=FALSE, stringsAsFactors=FALSE);
+		rownames(mdata) <- mdata[,1];
+		mdata <- mdata[, -1];
+		mdata <- as.matrix(mdata);
 	}
-	cat("Taking the largest object as mdata:", ..vv[..ii], "\n");
-	mdata <- eval(parse(text=..vv[..ii]));
-	rm(list=..vv[..ii]); # We will not delete the other objects
-	rm(..vv, ..ii, ..lv);
-	if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
-} else if (endsWith(..fn, ".gds")) {
-	cat("Loading", opt$met_file, "as GDS...\n");
-	suppressMessages(library(SeqArray));
-	suppressMessages(library(SeqVarTools));
-	suppressMessages(library(gdsfmt));
-	mdata <- seqOpen(opt$met_file);
-} else if (endsWith(..fn, ".bmat.tar")) {
-	cat("Loading", opt$met_file, "as .bmat.tar...\n");
-	..out <- untar(opt$met_file);
-	if (..out != 0) stop("Opening file failed!");
-	rm(..out);
-	mdata <- fm.open(gsub(".bmat.tar", "", opt$met_file, ignore.case=TRUE));
-} else {
-	# Assume text
-	cat("Loading", opt$met_file, "as text...\n");
-	mdata <- data.frame(fread(opt$met_file), check.names=FALSE, stringsAsFactors=FALSE);
-	rownames(mdata) <- mdata[,1];
-	mdata <- mdata[, -1];
-	mdata <- as.matrix(mdata);
-}
 
-# Loading the entire dataset to the memory is not wise
-if (is(mdata, "matrix") & !opt$load_all & NROW(mdata) > opt$block_size) {
-	cat("Converting data matrix into filematrix .bmat format...\n");
-	mdata <- fm.create.from.matrix("mdata-temp", mdata);
-	# Force R to relinquish any unused memory
-	while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
-}
-rm(..fn);
-cat("Main file has been loaded. Dimension:", dim(mdata), "\n");
-
-# Annotation loading and filtering (if any)
-..included_marker_ids <- ifelse(is(mdata, "SeqVarGDSClass"), seqGetData(mdata, "variant.id"), rownames(mdata));
-if (!is.na(opt$annot_file)) {
-	cat("Loading annotation", opt$annot_file, "\n");
-	annot_data <- fread(opt$annot_file);
-	cat("Annotation file has been loaded. Dimension:", dim(annot_data), "\n");
-	if (!is.na(opt$annot_filter_criteria)) {
-		annot_data <- annot_data[eval(parse(text=opt$annot_filter_criteria))]
-		cat("Annotation file has been filtered. Dimension:", dim(annot_data), "\n");
+	# Loading the entire dataset to the memory is not wise
+	if (is(mdata, "matrix") & !opt$load_all & NROW(mdata) > opt$block_size) {
+		cat("Converting data matrix into filematrix .bmat format...\n");
+		mdata <- fm.create.from.matrix("mdata-temp", mdata);
+		# Force R to relinquish any unused memory
+		while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
 	}
-	annot_data <- data.frame(annot_data, check.names=FALSE, stringsAsFactors=FALSE);
-	..included_marker_ids <- annot_data[, opt$annot_marker_id];
-	if (!is.na(opt$annot_cols) & opt$annot_cols != "") {
-		..annot_cols <- trim(unlist(strsplit(gsub("^\\\"|\\\"$|^'|'$", "", opt$annot_cols), ",")));
-		..annot_cols <- unique(c(..annot_cols, opt$annot_marker_id));
-		if (!all(..annot_cols %in% colnames(annot_data))) stop("Some of the annot_cols are not in the annotation columns!");
-		annot_data <- annot_data[, ..annot_cols];
-		rm(..annot_cols);
+	rm(..fn);
+	cat("Main file has been loaded. Dimension:", dim(mdata), "\n");
+}
+
+if (!opt$skip_loading_annotation) {
+	# Annotation loading and filtering (if any)
+	..included_marker_ids <- ifelse(is(mdata, "SeqVarGDSClass"), seqGetData(mdata, "variant.id"), rownames(mdata));
+	if (!is.na(opt$annot_file)) {
+		cat("Loading annotation", opt$annot_file, "\n");
+		annot_data <- fread(opt$annot_file);
+		cat("Annotation file has been loaded. Dimension:", dim(annot_data), "\n");
+		if (!is.na(opt$annot_filter_criteria)) {
+			annot_data <- annot_data[eval(parse(text=opt$annot_filter_criteria))]
+			cat("Annotation file has been filtered. Dimension:", dim(annot_data), "\n");
+		}
+		annot_data <- data.frame(annot_data, check.names=FALSE, stringsAsFactors=FALSE);
+		..included_marker_ids <- annot_data[, opt$annot_marker_id];
+		if (!is.na(opt$annot_cols) & opt$annot_cols != "") {
+			..annot_cols <- trim(unlist(strsplit(gsub("^\\\"|\\\"$|^'|'$", "", opt$annot_cols), ",")));
+			..annot_cols <- unique(c(..annot_cols, opt$annot_marker_id));
+			if (!all(..annot_cols %in% colnames(annot_data))) stop("Some of the annot_cols are not in the annotation columns!");
+			annot_data <- annot_data[, ..annot_cols];
+			rm(..annot_cols);
+		}
 	}
 }
 
-if (is(mdata, "SeqVarGDSClass")) {
-	..ids <- intersect(seqGetData(mdata, "sample.id"), pdata[, opt$id_col]);
-	if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
-	cat("There are", length(..ids), "IDs in common\n");
-	pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
-} else {
-	..ids <- intersect(as.character(colnames(mdata)), as.character(pdata[, opt$id_col]));
-	if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
-	cat("There are", length(..ids), "IDs in common\n");
-	pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
-}
-rm(..ids);
-cat("Phenotype file has been matched by ID. Dimension:", dim(pdata), "\n");
+opt$skip_matching <- FALSE;
 
-# Force R to relinquish any unused memory
-while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
-
+# Prologue code can skip matching between phenotype and omics dataset.
+# (or use a custom matching rule)
 if (!is.na(opt$prologue_code)) {
 	cat ("Loading pre-processing code...", opt$prologue_code, "\n");
 	#eval(parse(text=prologue_code));
 	source(opt$prologue_code);
 }
+
+if (!opt$skip_matching) {
+	if (is(mdata, "SeqVarGDSClass")) {
+		..ids <- intersect(seqGetData(mdata, "sample.id"), pdata[, opt$id_col]);
+		if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
+		cat("There are", length(..ids), "IDs in common\n");
+		pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
+	} else {
+		..ids <- intersect(as.character(colnames(mdata)), as.character(pdata[, opt$id_col]));
+		if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
+		cat("There are", length(..ids), "IDs in common\n");
+		pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
+	}
+	rm(..ids);
+	cat("Phenotype file has been matched by ID. Dimension:", dim(pdata), "\n");
+}
+
+# Force R to relinquish any unused memory
+while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
 
 #######################
 # MAIN ANALYSIS CODE
