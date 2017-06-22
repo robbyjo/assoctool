@@ -268,11 +268,11 @@
     }
   ],
   "runSpec": {
-    "timeoutPolicy": [
+    "timeoutPolicy": {
       "*": {
         "days": 30
       }
-    ],
+    },
     "systemRequirements": {
       "main": {
         "instanceType": "mem2_ssd1_x32"
