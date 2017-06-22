@@ -63,7 +63,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$met_file <- args["omics_file"];
 	opt$out_file <- args["output_file"];
 	opt$save_as_binary <- processBooleanArg(args["save_as_binary"], "save_as_binary");
-	opt$block_size <- processIntegerArg(args["block_size"], "block_size");
+	opt$block_size <- processIntegerArg(args["block_size"], "block_size", default_block_size);
 	opt$load_all <- processBooleanArg(args["load_all"], "load_all");
 	
 	# Phenotypic file related options

@@ -17,6 +17,13 @@
       "optional": false
     },
     {
+      "name": "block_size",
+      "help": "How many rows you wish to load at a time. The larger the number, the higher the burden of the computation. If the number is too small, it may be bogged down by the disk speed. Use your judgment. Leave default if in doubt. This is ignored if you set the 'Load all' to true.",
+      "class": "int",
+      "optional": true,
+      "default": 5000
+    },
+    {
       "name": "pheno_file",
       "label": "Phenotype file",
       "help": "Num obs x num variables. Must have header. Note: any column names with spaces or punctuations will be mangled as per R convention.",
@@ -202,6 +209,14 @@
       "optional": true
     },
     {
+      "name": "preload_code",
+      "label": "Preload code file",
+      "help": "R source code for preloading. This code will be loaded right BEFORE the data (main, phenotype, pedigree, annotation) are loaded and prepared. If you need to load several needed libraries or if you have specialized loading routines, here is the place. You can set opt$skip_loading_XXX to TRUE if you have a custom loader.",
+      "class": "file",
+      "patterns": ["*.R", "*.r"],
+      "optional": true
+    },
+    {
       "name": "prologue_code",
       "label": "Prologue code file",
       "help": "R source code for custom preprocessing. This code will be loaded right after all the data (main, phenotype, pedigree, annotation) are loaded and prepared.",
@@ -229,6 +244,14 @@
       "help": "The number of cores (at least one) you wish to use for the analysis. If you leave it blank or fill it with invalid values, the program will try to use the maximum number available.",
       "class": "int",
       "optional": true
+    },
+    {
+      "name": "load_all",
+	  "label": "Load all",
+      "help": "Setting this true will force the program to load the entirety of the data into the memory (RAM). This is generally a bad idea if you have a big dataset. Only do it if you have a small dataset and you do not want to be bothered with loading the data file in blocks.",
+      "class": "boolean",
+      "optional": true,
+      "default": false
     },
     {
       "name": "debug",

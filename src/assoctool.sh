@@ -25,6 +25,7 @@ main() {
     echo "Value of output_file: '$output_file'"
     echo "Value of save_as_binary: '$save_as_binary'"
     echo "Value of compress_output: '$compress_output'"
+    echo "Value of load_all: '$load_all'"
 
     echo "Value of pheno_file: '$pheno_file'"
     echo "Value of id_col: '$id_col"
@@ -57,6 +58,7 @@ main() {
     echo "Value of pedigree_sex: '$pedigree_sex'"
 
     echo "Value of num_cores: '$num_cores'"
+    echo "Value of block_size: '$block_size'"
     echo "Value of debug: '$debug'"
 
     mkdir -p /data/
@@ -154,6 +156,14 @@ main() {
 
     if [[ "$num_cores" != "" ]] ; then
         PARMS+=(--num_cores="$num_cores")
+    fi
+
+    if [[ "$block_size" != "" ]] ; then
+        PARMS+=(--block_size="$block_size")
+    fi
+
+    if [[ "$load_all" != "" ]] ; then
+        PARMS+=(--load_all="$load_all")
     fi
 
     wait
