@@ -103,7 +103,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	# Miscellaneous options
 	opt$num_cores <- processIntegerArg(args["num_cores"], "num_cores");
 	opt$progress_bar <- processBooleanArg(args["progress_bar"], "progress_bar");
-
+	opt$debug <- processBooleanArg(args["debug"], "progress_bar");
+	
 	# Parameter validation / sanity check before any loading takes place
 	opt$recognized_methods <- c("lm", "lmm", "glm", "glmm", "pedigreemm", "kinship1", "kinship2", "nls", "nlmm", "logistf", "rlm", "polr", "survival", "coxme", "gee", "geeglm", "ordgee", "zeroinfl", "glmnb", "censreg", "truncreg", "betareg", "quantreg", "mlogit", "relogit", "gamlss", "zelig", "custom");
 	opt$recognized_pedigree <- c("pedigreemm", "kinship1", "kinship2", "sparse_matrix", "dense_matrix");

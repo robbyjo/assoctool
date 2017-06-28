@@ -51,6 +51,7 @@ processBooleanArg <- function(b, var_name, default=FALSE) {
 		if (is.numeric(b)) {
 			return (b != 0);
 		} else if (is.character(b)) {
+			b <- toupper(b);
 			if (b == "TRUE" | b == "T") {
 				return (TRUE);
 			} else if (b == "FALSE" | b == "F") {
