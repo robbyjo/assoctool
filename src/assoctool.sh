@@ -62,9 +62,9 @@ main() {
     echo "Value of debug: '$debug'"
 
     mkdir -p /data/
-    $omics_file_name=`dx ls "$omics_file"`
+    omics_file_name=`dx ls "$omics_file"`
     echo "Real name of omics file: $omics_file_name"
-    $pheno_file_name=`dx ls "$pheno_file"`
+    pheno_file_name=`dx ls "$pheno_file"`
     echo "Real name of phenotype file: $pheno_file_name"
 
     PARMS=(--omics_file="/data/${omics_file_name}")
@@ -123,7 +123,7 @@ main() {
     fi
 
     if [[ "$annot_file" != "" ]] ; then
-    	$annot_file_name=`dx ls "$annot_file"`
+    	annot_file_name=`dx ls "$annot_file"`
     	echo "Real name of annotation file: $annot_file_name"
         PARMS+=(--annot_file="/data/${annot_file_name}")
         dx download "$annot_file" -o "/data/${annot_file_name}" &
@@ -139,7 +139,7 @@ main() {
     fi
 
     if [[ "$pedigree_file" != "" ]] ; then
-    	$pedigree_file_name=`dx ls "$pedigree_file"`
+    	pedigree_file_name=`dx ls "$pedigree_file"`
     	echo "Real name of pedigree file: $pedigree_file_name"
         PARMS+=(--pedigree_file="/data/${pedigree_file_name}")
         dx download "$pedigree_file" -o "/data/${pedigree_file_name}" &
