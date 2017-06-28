@@ -62,10 +62,15 @@ main() {
     echo "Value of debug: '$debug'"
 
     mkdir -p /data/
-    PARMS=(--omics_file="/data/${omics_file}")
-    dx download "$omics_file" -o "/data/${omics_file}" &
-    PARMS+=(--pheno_file="/data/${pheno_file}")
-    dx download "$pheno_file" -o "/data/${pheno_file}" &
+    $omics_file_name=$(dx ls $omics_file)
+    echo "Real name of omics file: $omics_file_name"
+    $pheno_file_name=$(dx ls $pheno_file)
+    echo "Real name of phenotype file: $pheno_file_name"
+
+    PARMS=(--omics_file="/data/${omics_file_name}")
+    dx download "$omics_file" -o "/data/${omics_file_name}" &
+    PARMS+=(--pheno_file="/data/${pheno_file_name}")
+    dx download "$pheno_file" -o "/data/${pheno_file_name}" &
 
 # Required parameters
     PARMS+=(--output_file=results)
@@ -92,20 +97,20 @@ main() {
         PARMS+=(--fn_param_list="$fn_param_list")
     fi
     if [[ "$preload_code" != "" ]] ; then
-        PARMS+=(--preload_code="/data/${preload_code}")
-        dx download "$preload_code" -o "/data/${preload_code}" &
+        PARMS+=(--preload_code="/data/preload_code.R")
+        dx download "$preload_code" -o "/data/preload_code.R" &
     fi
     if [[ "$prologue_code" != "" ]] ; then
-        PARMS+=(--prologue_code="/data/${prologue_code}")
-        dx download "$prologue_code" -o "/data/${prologue_code}" &
+        PARMS+=(--prologue_code="/data/prologue_code")
+        dx download "$prologue_code" -o "/data/prologue_code.R" &
     fi
     if [[ "$epilogue_code" != "" ]] ; then
-        PARMS+=(--epilogue_code="/data/${epilogue_code}")
-        dx download "$epilogue_code" -o "/data/${epilogue_code}" &
+        PARMS+=(--epilogue_code="/data/epilogue_code.R")
+        dx download "$epilogue_code" -o "/data/epilogue_code.R" &
     fi
     if [[ "$analysis_code" != "" ]] ; then
-        PARMS+=(--analysis_code="/data/${analysis_code}")
-        dx download "$analysis_code" -o "/data/${analysis_code}" &
+        PARMS+=(--analysis_code="/data/$analysis_code.R")
+        dx download "$analysis_code" -o "/data/analysis_code.R" &
     fi
     if [[ "$omics_var_name" != "" ]] ; then
         PARMS+=(--omics_var_name="$omics_var_name")
@@ -118,8 +123,10 @@ main() {
     fi
 
     if [[ "$annot_file" != "" ]] ; then
-        PARMS+=(--annot_file="$annot_file")
-        dx download "$annot_file" &
+    	$annot_file_name=$(dx ls $annot_file)
+    	echo "Real name of annotation file: $annot_file_name"
+        PARMS+=(--annot_file="/data/${annot_file_name}")
+        dx download "$annot_file" -o "/data/${annot_file_name}" &
     fi
     if [[ "$annot_marker_id" != "" ]] ; then
         PARMS+=(--annot_marker_id="$annot_marker_id")
@@ -132,8 +139,10 @@ main() {
     fi
 
     if [[ "$pedigree_file" != "" ]] ; then
-        PARMS+=(--pedigree_file="/data/${pedigree_file}")
-        dx download "$pedigree_file" -o "/data/${pedigree_file}" &
+    	$pedigree_file_name=$(dx ls $pedigree_file)
+    	echo "Real name of pedigree file: $pedigree_file_name"
+        PARMS+=(--pedigree_file="/data/${pedigree_file_name}")
+        dx download "$pedigree_file" -o "/data/${pedigree_file_name}" &
     fi
     if [[ "$pedigree_id_col" != "" ]] ; then
         PARMS+=(--pedigree_id_col="$pedigree_id_col")
@@ -170,12 +179,17 @@ main() {
         PARMS+=(--debug="$debug")
     fi
 
+    echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
+    echo "Listing /data/"
+    ls /data/
+    echo "Working directory is:"
+    pwd
     echo "Checking phenofile" 
-    if [ -e /data/${pheno_file} ]
+    if [ -e /data/pheno_file ]
     then
-       head -n1 /data/${pheno_file}
+       head -n1 /data/pheno_file
     else
        echo "The phenofile is not ready"
     fi
