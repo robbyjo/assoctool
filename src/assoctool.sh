@@ -77,7 +77,7 @@ main() {
     dx download "$pheno_file" -o "/data/${pheno_file_name}" &
 
 # Required parameters
-    PARMS+=(--output_file=results)
+    PARMS+=(--output_file=/data/results)
     PARMS+=(--id_col="$id_col")
     PARMS+=(--method="$method")
     PARMS+=(--formula="$formula")
@@ -101,20 +101,28 @@ main() {
         PARMS+=(--fn_param_list="$fn_param_list")
     fi
     if [[ "$preload_code" != "" ]] ; then
-        PARMS+=(--preload_code="/data/preload_code.R")
-        dx download "$preload_code" -o "/data/preload_code.R" &
+        preload_code_file_name=`dx ls "$preload_code"`
+        echo "Real name of preload code file: $preload_code_file_name"
+        PARMS+=(--preload_code="/data/${preload_code_file_name}")
+        dx download "$preload_code" -o "/data/${preload_code_file_name}" &
     fi
     if [[ "$prologue_code" != "" ]] ; then
-        PARMS+=(--prologue_code="/data/prologue_code")
-        dx download "$prologue_code" -o "/data/prologue_code.R" &
+        prologue_code_file_name=`dx ls "$prologue_code"`
+        echo "Real name of prologue code file: $prologue_code_file_name"
+        PARMS+=(--prologue_code="/data/${prologue_code_file_name}")
+        dx download "$prologue_code" -o "/data/${prologue_code_file_name}" &
     fi
     if [[ "$epilogue_code" != "" ]] ; then
-        PARMS+=(--epilogue_code="/data/epilogue_code.R")
-        dx download "$epilogue_code" -o "/data/epilogue_code.R" &
+        epilogue_code_file_name=`dx ls "$epilogue_code"`
+        echo "Real name of epilogue code file: $epilogue_code_file_name"
+        PARMS+=(--epilogue_code="/data/${epilogue_code_file_name}")
+        dx download "$epilogue_code" -o "/data/${epilogue_code_file_name}" &
     fi
     if [[ "$analysis_code" != "" ]] ; then
-        PARMS+=(--analysis_code="/data/$analysis_code.R")
-        dx download "$analysis_code" -o "/data/analysis_code.R" &
+        analysis_code_file_name=`dx ls "$analysis_code"`
+        echo "Real name of analysis code file: $analysis_code_file_name"
+        PARMS+=(--analysis_code="/data/${analysis_code_file_name}")
+        dx download "$analysis_code" -o "/data/${analysis_code_file_name}" &
     fi
     if [[ "$omics_var_name" != "" ]] ; then
         PARMS+=(--omics_var_name="$omics_var_name")
@@ -203,17 +211,29 @@ main() {
     echo "Running code"
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
     echo "Finished running code"
-    results=$(dx upload results --brief)
-    dx-jobutil-add-output results "$results" --class=file
+    results="/data/results"
     if [[ $compress_output == "GZIP" ]] ; then
+       echo "Gzipping result file..."
        gzip -9 $results
-       results="${results}.gz"
+       results="/data/results.gz"
     elif [[ $compress_output == "BZ2" ]] ; then
+       echo "Bzipping result file..."
        bzip2 -9 $results
-       results="${results}.bz2"
+       results="/data/results.bz2"
     elif [[ $compress_output == "XZ" ]] ; then
+       echo "Xzipping result file..."
        xz -9 $results
-       results="${results}.xz"
+       results="/data/results.xz"
     fi
+
+    results=$(dx upload ${results} --brief)
+    echo "Uploaded results: '$results'"
+    dx-jobutil-add-output results "$results" --class=file
+    echo "Working directory is:"
+    pwd
+    echo "===== Listing pwd ====="
+    ls -R
+    echo "===== Listing pwd ends ====="
+    echo "Moving results to ${output_file}"
     dx mv ${results} ${output_file}
 }
