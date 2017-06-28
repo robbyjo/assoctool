@@ -182,14 +182,15 @@ main() {
     echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
-    echo "Listing /data/"
-    ls /data/
+    echo "===== Listing /data/ ====="
+    ls -R /data/
+    echo "===== Listing /data/ ends ====="
     echo "Working directory is:"
     pwd
-    echo "Checking phenofile" 
-    if [ -e /data/pheno_file ]
+    echo "Checking phenotype file" 
+    if [ -e "/data/${pheno_file_name}" ]
     then
-       head -n1 /data/pheno_file
+       head -n1 /data/${pheno_file_name}
     else
        echo "The phenofile is not ready"
     fi
