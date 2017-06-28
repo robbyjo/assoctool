@@ -166,17 +166,14 @@ main() {
         PARMS+=(--load_all="$load_all")
     fi
 
+    if [[ "$debug" != "" ]] ; then
+        PARMS+=(--debug="$debug")
+    fi
+
     wait
     sudo chmod o+rw /tmp
-    # wait if debug 
-    if [ ${debug} -ne 0 ]
-    then
-       echo "DEBUG is on ==="
-       echo "Rscript assoctool.R ${PARMS[@]}"
-    fi
-    wait
     echo "Checking phenofile" 
-    if [ -e $phenofile ] 
+    if [ -e $phenofile ]
     then
        head -n1 $phenofile
     else
