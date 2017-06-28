@@ -173,9 +173,9 @@ main() {
     wait
     sudo chmod o+rw /tmp
     echo "Checking phenofile" 
-    if [ -e $phenofile ]
+    if [ -e /data/${pheno_file} ]
     then
-       head -n1 $phenofile
+       head -n1 /data/${pheno_file}
     else
        echo "The phenofile is not ready"
     fi
