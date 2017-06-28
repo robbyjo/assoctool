@@ -19,6 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Do not forget to do this:
+# sudo chmod 666 /var/run/docker.sock
+# dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.0 assoctool
+
 main() {
 
     echo "Value of omics_file: '$omics_file'"
@@ -197,7 +201,7 @@ main() {
  
     echo "Rscript assoctool.R ${PARMS[@]}"
     echo "Running code"
-    dx-docker run -v /data/:/data/ robbyjo/r-mkl-assoctool:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
+    dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
     echo "Finished running code"
     results=$(dx upload results --brief)
     dx-jobutil-add-output results "$results" --class=file

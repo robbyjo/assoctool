@@ -69,6 +69,9 @@ processIntegerArg <- function(v, var_name, default=NA) {
 		return (default);
 	}
 	if (is.na(v)) return(v);
+	# Attempt to intelligently convert to numeric
+	v <- as.numeric(as.character(v));
+	if (!is.na(v)) return(v);
 	cat(paste("Unknown characters in ", var_name, "!", sep=""), "\n");
 	return (default);
 }
