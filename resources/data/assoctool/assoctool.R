@@ -480,7 +480,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..block_end[..num_blocks] <- ..num_markers;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
-		seqSetFilter(..gds, variant.sel = ..block_start:..block_end, sample.sel = ..ids, verbose = FALSE);
+		seqSetFilter(..gds, variant.sel = ..block_start:..block_end, sample.id = ..ids, verbose = FALSE);
 		mdata <- t(altDosage(..gds));
 		mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids];
 		cur_result <- do.call(rbind, ..fun(1:NROW(mdata), doOne));
