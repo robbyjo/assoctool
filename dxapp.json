@@ -18,6 +18,7 @@
     },
     {
       "name": "block_size",
+      "label": "Block size",
       "help": "How many rows you wish to load at a time. The larger the number, the higher the burden of the computation. If the number is too small, it may be bogged down by the disk speed. Use your judgment. Leave default if in doubt. This is ignored if you set the 'Load all' to true.",
       "class": "int",
       "optional": true,
