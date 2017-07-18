@@ -206,11 +206,22 @@ main() {
     else
        echo "The phenofile is not ready"
     fi
- 
+
+    echo "Running profiling (sar)"
+    sar -u 10 > /data/benchmark.prof &
+
     echo "Rscript assoctool.R ${PARMS[@]}"
     echo "Running code"
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
     echo "Finished running code"
+
+    echo "Killing profiling code"
+    killall sar
+    echo "Benchmark results:"
+    echo "=========================== BEGIN ==========================="
+    cat /data/benchmark.prof
+    echo "============================ END ============================"
+
     results="/data/results"
     if [[ $compress_output == "GZIP" ]] ; then
        echo "Gzipping result file..."
