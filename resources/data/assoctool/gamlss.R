@@ -53,7 +53,7 @@ if (is.null(param_list[['i.control']])) {
 
 # TODO: Check this function
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	suppressMessages(result <- do.call(gamlss, param_list));
 
 	# Much of the code below is taken from SUMMARY.R of gamlss package. The reason is that there is no way to extract

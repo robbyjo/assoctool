@@ -20,7 +20,7 @@
 suppressMessages(library(survival));
 eval(parse(text=param_cmd));
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	result <- do.call(coxph, param_list);
 	tbl <- summary(result)$coef;
 	

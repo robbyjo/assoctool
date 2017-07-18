@@ -35,7 +35,7 @@ if (is.null(param_list[['varlist']]) & isDefined(ped)) {
 	print(param_list$formula);
 }
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	x <- do.call(coxme, param_list);
 	# coxme does not provide coefficient tables like the others, unfortunately. So, we need to copy and paste from print.coxme.R
 	beta <- x$coefficients;

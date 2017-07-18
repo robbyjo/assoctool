@@ -20,7 +20,7 @@
 eval(parse(text=param_cmd));
 ..lmFun <- match.fun(tolower(opt$method));
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	result <- do.call(..lmFun, param_list);
 	tbl <- summary(result)$coef;
 	#reduced_y <- result$model[, attr(result$terms, "response")];

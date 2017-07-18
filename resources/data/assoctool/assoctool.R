@@ -392,6 +392,14 @@ if (!opt$skip_loading_annotation) {
 
 opt$skip_matching <- FALSE;
 
+get <- function(mat, i) {
+	if (is(mdata, "filematrix") | is(mdata, "matrix")) return (txFun(as.numeric(mat[i, ])));
+	if (is(mdata, "SeqVarGDSClass")) {
+		# FIXME
+	}
+}
+
+
 # Prologue code can skip matching between phenotype and omics dataset.
 # (or use a custom matching rule)
 if (!is.na(opt$prologue_code)) {

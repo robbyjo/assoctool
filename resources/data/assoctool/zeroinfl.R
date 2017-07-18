@@ -22,7 +22,7 @@ eval(parse(text=param_cmd));
 param_list$y <- TRUE; # We need this for Rsq computation
 
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	result <- do.call(zeroinfl, param_list);
 	tbl1 <- summary(result)$coef$count;
 	tbl2 <- summary(result)$coef$zero;

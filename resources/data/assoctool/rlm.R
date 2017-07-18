@@ -31,7 +31,7 @@ if (is.null(param_list[['y']])) {
 	param_list$y <- TRUE;
 }
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	result <- do.call(lmRob, param_list);
 	sst <- var(result$y) * (length(result$y) - 1);
 	tbl <- summary(result)$coef;

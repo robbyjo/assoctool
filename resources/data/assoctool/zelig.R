@@ -26,7 +26,7 @@ if (is.null(param_list[['cite']]) | !is.logical(param_list[['cite']])) {
 	param_list$cite <- FALSE;
 }
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(as.numeric(mdata[i,]));
+	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
 	result <- do.call(zelig, param_list);
 	tbl <- c();
 	out_length <- length(z.out$zelig.out$z.out);
