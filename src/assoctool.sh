@@ -24,6 +24,9 @@
 # dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.0 assoctool
 
 main() {
+    sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak
+    mv /etc/default/sysstat.bak /etc/default/sysstat
+    /etc/init.d/sysstat start
 
     echo "Value of omics_file: '$omics_file'"
     echo "Value of output_file: '$output_file'"

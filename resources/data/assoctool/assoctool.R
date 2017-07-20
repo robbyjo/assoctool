@@ -396,6 +396,7 @@ get <- function(mat, i) {
 	if (is(mdata, "filematrix") | is(mdata, "matrix")) return (txFun(as.numeric(mat[i, ])));
 	if (is(mdata, "SeqVarGDSClass")) {
 		# FIXME
+		return (txFun(as.numeric(mat[i, ])));
 	}
 }
 
@@ -480,6 +481,12 @@ if (opt$num_cores > 1) {
 }
 
 if (is(mdata, "SeqVarGDSClass")) {
+	## GDS files need full sample IDs
+	#..all_ids <- seqGetData(mdata, "sample.id");
+	#..pdata <- pdata[match(..all_ids, pdata[, opt$id_col]),];
+	#..pdata[, opt$id_col] <- ..all_ids;
+	#..pdata <- AnnotatedDataFrame(data.frame(sample.id = ..all_ids, ..pdata, stringsAsFactors=FALSE));
+
 	..gds <- mdata;
 	..num_markers <- length(seqGetData(..gds, "variant.id"));
 	..num_blocks <- ceiling(..num_markers / opt$block_size);
@@ -488,8 +495,9 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..block_end[..num_blocks] <- ..num_markers;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
-		seqSetFilter(..gds, variant.sel = ..block_start:..block_end, sample.id = ..ids, verbose = FALSE);
+		seqSetFilter(..gds, variant.sel = ..block_start[..block_no]:..block_end[..block_no], sample.id = ..ids, verbose = FALSE);
 		mdata <- t(altDosage(..gds));
+		#mdata <- SeqVarData(..gds, sampleData=..pdata);
 		mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids];
 		cur_result <- do.call(rbind, ..fun(1:NROW(mdata), doOne));
 		rownames(cur_result) <- rownames(mdata);
