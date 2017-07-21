@@ -155,6 +155,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	if (!is.na(opt$result_var_name)) {
 		opt$result_var_name <- trim(unlist(strsplit(opt$result_var_name, ",")));
 		opt$result_var_pattern <- paste(opt$result_var_name, collapse="|");
+	} else {
+		opt$result_var_pattern <- NULL;
 	}
 
 	if (is.na(opt$formula_str)) stop("Formula needs to be specified. R formula string.");
