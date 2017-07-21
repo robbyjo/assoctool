@@ -215,7 +215,7 @@ main() {
 
     echo "Rscript assoctool.R ${PARMS[@]}"
     echo "Running code"
-    dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.0 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
+    dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
     echo "Finished running code"
 
     echo "Killing profiling code"
@@ -226,28 +226,32 @@ main() {
     echo "============================ END ============================"
 
     results="/data/results"
-    if [[ $compress_output == "GZIP" ]] ; then
-       echo "Gzipping result file..."
-       gzip -9 $results
-       results="/data/results.gz"
-    elif [[ $compress_output == "BZ2" ]] ; then
-       echo "Bzipping result file..."
-       bzip2 -9 $results
-       results="/data/results.bz2"
-    elif [[ $compress_output == "XZ" ]] ; then
-       echo "Xzipping result file..."
-       xz -9 $results
-       results="/data/results.xz"
-    fi
+    if [ -e $results ] ; then
+       if [[ $compress_output == "GZIP" ]] ; then
+          echo "Gzipping result file..."
+          gzip -9 $results
+          results="/data/results.gz"
+       elif [[ $compress_output == "BZ2" ]] ; then
+          echo "Bzipping result file..."
+          bzip2 -9 $results
+          results="/data/results.bz2"
+       elif [[ $compress_output == "XZ" ]] ; then
+          echo "Xzipping result file..."
+          xz -9 $results
+          results="/data/results.xz"
+       fi
 
-    results=$(dx upload ${results} --brief)
-    echo "Uploaded results: '$results'"
-    dx-jobutil-add-output results "$results" --class=file
-    echo "Working directory is:"
-    pwd
-    echo "===== Listing pwd ====="
-    ls -R
-    echo "===== Listing pwd ends ====="
-    echo "Moving results to ${output_file}"
-    dx mv ${results} ${output_file}
+       results=$(dx upload ${results} --brief)
+       echo "Uploaded results: '$results'"
+       dx-jobutil-add-output results "$results" --class=file
+       echo "Working directory is:"
+       pwd
+       echo "===== Listing pwd ====="
+       ls -R
+       echo "===== Listing pwd ends ====="
+       echo "Moving results to ${output_file}"
+       dx mv ${results} ${output_file}
+    else
+       echo "No result file is detected"
+    fi
 }
