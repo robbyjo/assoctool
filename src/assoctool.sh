@@ -238,9 +238,6 @@ main() {
        echo "The phenofile is not ready"
     fi
 
-    echo "Running profiling (sar)"
-    sar -u 10 > /data/benchmark.prof &
-
     echo '#!/bin/bash' > /data/runme.sh
     echo 'echo "Setting up profiling"' >> /data/runme.sh
     echo 'sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak' >> /data/runme.sh
@@ -248,14 +245,19 @@ main() {
     echo '/etc/init.d/sysstat start' >> /data/runme.sh
     x="Rscript assoctool.R ${PARMS[@]}"
     echo "echo \"$x\"" >> /data/runme.sh
+    if [ $debug == "true" ] ; then
+       echo "sar -u 60 > /data/benchmark.prof &" >> /data/runme.sh
+    fi
     echo 'echo "Running code"' >> /data/runme.sh
     x="/usr/bin/Rscript --vanilla /data/assoctool/assoctool.R ${PARMS[@]}"
     echo "$x" >> /data/runme.sh
     echo 'echo "Finished running code"' >> /data/runme.sh
-    echo 'echo "Benchmark results:"' >> /data/runme.sh
-    echo 'echo "=========================== BEGIN ==========================="' >> /data/runme.sh
-    echo 'cat /data/benchmark.prof' >> /data/runme.sh
-    echo 'echo "============================ END ============================"' >> /data/runme.sh
+    if [ $debug == "true" ] ; then
+       echo 'echo "Benchmark results:"' >> /data/runme.sh
+       echo 'echo "=========================== BEGIN ==========================="' >> /data/runme.sh
+       echo 'cat /data/benchmark.prof' >> /data/runme.sh
+       echo 'echo "============================ END ============================"' >> /data/runme.sh
+    fi
     chmod 700 /data/runme.sh
 
     echo "============================ Script begin ============================ "
@@ -283,11 +285,13 @@ main() {
        results=$(dx upload ${results} --brief)
        echo "Uploaded results: '$results'"
        dx-jobutil-add-output results "$results" --class=file
-       echo "Working directory is:"
-       pwd
-       echo "===== Listing pwd ====="
-       ls -R
-       echo "===== Listing pwd ends ====="
+       if [ $debug == "true" ] ; then
+          echo "Working directory is:"
+          pwd
+          echo "===== Listing pwd ====="
+          ls -R
+          echo "===== Listing pwd ends ====="
+       fi
        echo "Moving results to ${output_file}"
        dx mv ${results} ${output_file}
     else
