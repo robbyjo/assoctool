@@ -76,6 +76,15 @@ processIntegerArg <- function(v, var_name, default=NA) {
 	return (default);
 }
 
+processFloatArg <- function(v, var_name, default=NA) {
+	if (is.numeric(v) | is.na(v)) return(v);
+	# Attempt to intelligently convert to numeric
+	v <- as.numeric(as.character(v));
+	if (!is.na(v)) return(v);
+	cat(paste("Unknown characters in ", var_name, "!", sep=""), "\n");
+	return (default);
+}
+
 # Very simple command line argument parsing
 processArgs <- function(args, show=TRUE) {
 	stopifnot (length(args) > 0);

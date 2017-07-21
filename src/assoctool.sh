@@ -35,6 +35,7 @@ main() {
     echo "Value of pheno_filter_criteria: '$pheno_filter_criteria'"
     echo "Value of factors_list: '$factors_list'"
 
+    echo "Value of analysis_type: '$analysis_type'"
     echo "Value of method: '$method'"
     echo "Value of formula: '$formula'"
     echo "Value of tx_fun: '$tx_fun'"
@@ -51,6 +52,13 @@ main() {
     echo "Value of annot_marker_id: '$annot_marker_id'"
     echo "Value of annot_filter_criteria: '$annot_filter_criteria'"
     echo "Value of annot_cols: '$annot_cols'"
+
+    echo "Value of maf_thershold: '$maf_thershold'"
+    echo "Value of mac_thershold: '$mac_thershold'"
+    echo "Value of chromosome: '$chromosome'"
+    echo "Value of sex: '$sex'"
+    echo "Value of gds_var_id: '$gds_var_id'"
+    echo "Value of gds_sample_id: '$gds_sample_id'"
 
     echo "Value of pedigree_file: '$pedigree_file'"
     echo "Value of pedigree_type: '$pedigree_type'"
@@ -79,6 +87,7 @@ main() {
     PARMS+=(--output_file=/data/results)
     PARMS+=(--id_col="$id_col")
     PARMS+=(--method="$method")
+    PARMS+=(--analysis_type="$analysis_type")
     PARMS+=(--formula="$formula")
 
 # Optional parameters
@@ -147,6 +156,25 @@ main() {
     fi
     if [[ "$annot_cols" != "" ]] ; then
         PARMS+=(--annot_cols="$annot_cols")
+    fi
+    if [[ "$maf_threshold" != "" ]] ; then
+        PARMS+=(--maf_threshold="$maf_threshold")
+    fi
+    if [[ "$mac_threshold" != "" ]] ; then
+        PARMS+=(--mac_threshold="$mac_threshold")
+    fi
+
+    if [[ "$gds_var_id" != "" ]] ; then
+        PARMS+=(--gds_var_id="$gds_var_id")
+    fi
+    if [[ "$gds_sample_id" != "" ]] ; then
+        PARMS+=(--gds_sample_id="$gds_sample_id")
+    fi
+    if [[ "$chromosome" != "" ]] ; then
+        PARMS+=(--chromosome="$chromosome")
+    fi
+    if [[ "$sex" != "" ]] ; then
+        PARMS+=(--sex="$sex")
     fi
 
     if [[ "$pedigree_file" != "" ]] ; then

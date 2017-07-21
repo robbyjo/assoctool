@@ -51,7 +51,7 @@
 
 default_code_path <- Sys.getenv("ASSOCTOOL_DIR");
 if (is.null(default_code_path) | default_code_path == "") default_code_path <- "/data/assoctool/";
-default_block_size <- 5000;
+default_block_size <- 10000;
 
 source(paste(default_code_path, "utils.R", sep=""));
 args <- processArgs(commandArgs(trailingOnly=TRUE));
@@ -73,6 +73,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$factors_list <- args["factors_list"];
 
 	# Method and analysis related options
+	opt$analysis_type <- tolower(trim(args["analysis_type"]));
 	opt$method <- args["method"];
 	opt$formula_str <- args["formula"];
 	opt$tx_fun_str <- args["tx_fun"];
@@ -91,6 +92,17 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$annot_filter_criteria <- args["annot_filter_criteria"];
 	opt$annot_cols <- args["annot_cols"];
 
+	#GWAS-oriented options
+	opt$maf_threshold <- processFloatArg(args["maf_threshold"], "maf_threshold");
+	opt$mac_threshold <- processIntegerArg(args["mac_threshold"], "mac_threshold", 1);
+	opt$chromosome <- tolower(args["chromosome"]);
+	if (!(opt$chromosome %in% c("x", "y", "mt"))) opt$chromosome <- "autosome";
+	opt$sex <- args["sex"];
+
+	# GDS related options
+	opt$gds_var_id <- args["gds_var_id"];
+	opt$gds_sample_id <- args["gds_sample_id"];
+
 	# Pedigree related options
 	opt$pedigree_file <- args["pedigree_file"];
 	opt$pedigree_id_col <- args["pedigree_id_col"];
@@ -106,6 +118,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$debug <- processBooleanArg(args["debug"], "progress_bar");
 	
 	# Parameter validation / sanity check before any loading takes place
+	opt$recognized_analysis <- c("gwas", "epigenome", "transcriptome", "protein", "metabolite", "microbiome", "generic");
 	opt$recognized_methods <- c("lm", "lmm", "glm", "glmm", "pedigreemm", "kinship1", "kinship2", "nls", "nlmm", "logistf", "rlm", "polr", "survival", "coxme", "gee", "geeglm", "ordgee", "zeroinfl", "glmnb", "censreg", "truncreg", "betareg", "quantreg", "mlogit", "relogit", "gamlss", "zelig", "custom");
 	opt$recognized_pedigree <- c("pedigreemm", "kinship1", "kinship2", "sparse_matrix", "dense_matrix");
 
@@ -118,6 +131,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 		cat ("Detected invalid num_cores. Defaulting to using all available cores!\n");
 		opt$num_cores <- NA;
 	}
+	if (!(opt$analysis_type %in% opt$recognized_analysis)) stop(paste("The only analysis methods are:", paste(opt$recognized_analysis, collapse=", ")));
 	if (is.na(opt$id_col)) stop("ID column specification is missing!");
 	if (!is.na(opt$pedigree_file)) {
 		if (is.na(opt$pedigree_id_col)) opt$pedigree_id_col <- opt$id_col;
@@ -222,6 +236,23 @@ if (!opt$skip_loading_phenotype) {
 		}
 		rm(..factor);
 	}
+
+	if (opt$analysis_type == "gwas") {
+		if (opt$sex %in% colnames(pdata)) {
+			..avail_sex <- unique(pdata[, opt$sex]);
+			if (any(..avail_sex == "")) {
+				..avail_sex[..avail_sex == ""] <- "<empty>";
+			}
+			cat("Sex is encoded as:", ..avail_sex, "\n");
+			..b <- ..avail_sex %in% c("M", "F");
+			if (!all(..b)) {
+				stop(paste("Some of the sex in column '", opt$sex, "' are not encoded in M or F.", sep=""))
+			}
+			rm(..avail_sex, ..b);
+		} else {
+			stop(paste("This is a GWAS analysis and the column '", opt$sex, "' to indicate sex is not in the phenotype file!", sep=""))
+		}
+	}
 }
 
 if (!opt$skip_loading_pedigree) {
@@ -251,7 +282,9 @@ if (!opt$skip_loading_pedigree) {
 			rm(list=..vv[..ii]); # We will not delete the other objects
 			rm(..vv, ..ii, ..lv);
 			#if (class(ped) != "matrix") ped <- as.matrix(ped);
-		} else {
+		} else { # Text file
+			if (opt$pedigree_type %in% c("sparse_matrix", "dense_matrix")) stop("Sparse / dense matrix pedigrees MUST be entered through rds / rda / RData files!");
+
 			cat("Loading", opt$pedigree_file, "as text. Constructing sibship.\n");
 			ped_data <- data.frame(fread(opt$pedigree_file), check.names=FALSE, stringsAsFactors=FALSE);
 			cat("Pedigree file has been loaded. Dimension:", dim(ped_data), "\n");
@@ -369,7 +402,7 @@ if (!opt$skip_loading_omics) {
 
 if (!opt$skip_loading_annotation) {
 	# Annotation loading and filtering (if any)
-	..included_marker_ids <- ifelse(is(mdata, "SeqVarGDSClass"), seqGetData(mdata, "variant.id"), rownames(mdata));
+	..included_marker_ids <- ifelse(is(mdata, "SeqVarGDSClass"), seqGetData(mdata, opt$gds_var_id), rownames(mdata));
 	if (!is.na(opt$annot_file)) {
 		cat("Loading annotation", opt$annot_file, "\n");
 		annot_data <- fread(opt$annot_file);
@@ -393,11 +426,7 @@ if (!opt$skip_loading_annotation) {
 opt$skip_matching <- FALSE;
 
 get <- function(mat, i) {
-	if (is(mdata, "filematrix") | is(mdata, "matrix")) return (txFun(as.numeric(mat[i, ])));
-	if (is(mdata, "SeqVarGDSClass")) {
-		# FIXME
-		return (txFun(as.numeric(mat[i, ])));
-	}
+	return (txFun(as.numeric(mat[i, ])));
 }
 
 
@@ -411,10 +440,11 @@ if (!is.na(opt$prologue_code)) {
 
 if (!opt$skip_matching) {
 	if (is(mdata, "SeqVarGDSClass")) {
-		..ids <- intersect(seqGetData(mdata, "sample.id"), pdata[, opt$id_col]);
+		..ids <- intersect(seqGetData(mdata, opt$gds_sample_id), pdata[, opt$id_col]);
 		if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
 		cat("There are", length(..ids), "IDs in common\n");
 		pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
+		cat("There are", length(seqGetData(mdata, opt$gds_var_id)), "number of SNPs in the file.\n");
 	} else {
 		..ids <- intersect(as.character(colnames(mdata)), as.character(pdata[, opt$id_col]));
 		if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
@@ -441,6 +471,19 @@ while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
 param_cmd <- "param_list <- ifelse(is.na(opt$fn_param_list), list(), paramToList(opt$fn_param_list)); param_list$formula <- opt$fm; param_list$data <-pdata; if (NA %in% names(param_list)) { param_list[[which(NA %in% names(param_list))]] <- NULL; }";
 ..patterns <- NULL;
 
+# NOTE: If you have a big machine with big RAM, use the parallel version.
+# If not, use the serial version.
+
+# Show how many cores your machine has:
+library(parallel);
+if (is.na(opt$num_cores)) opt$num_cores <- detectCores(logical=TRUE);
+cat("The number of cores will be used:", opt$num_cores, "\n");
+options(mc.cores = opt$num_cores);
+
+# Show the size of your dataset in MB
+cat("Used memory (MB):\n");
+(used_mem <- gc(reset=TRUE)[2,2]);
+
 # Load the relevant plugins
 if (opt$method == "custom") {
 	try(eval(parse(text=param_cmd)));
@@ -454,59 +497,72 @@ if (opt$method == "custom") {
 	source(paste(default_code_path, opt$method, ".R", sep=""));
 }
 
-
-
-# NOTE: If you have a big machine with big RAM, use the parallel version.
-# If not, use the serial version.
-
-# Show how many cores your machine has:
-library(parallel);
-if (is.na(opt$num_cores)) opt$num_cores <- detectCores(logical=TRUE);
-cat("The number of cores will be used:", opt$num_cores, "\n");
-
-# Show the size of your dataset in MB
-cat("Used memory (MB):\n");
-(used_mem <- gc(reset=TRUE)[2,2]);
-
-
 result_all <- c();
 ..ids <- pdata[,opt$id_col];
-if (opt$num_cores > 1) {
-	# Parallel version
-	options(mc.cores = opt$num_cores);
-	..fun <- mclapply;
-} else {
-	# Serial version
-	..fun <- lapply;
-}
 
 if (is(mdata, "SeqVarGDSClass")) {
-	## GDS files need full sample IDs
-	#..all_ids <- seqGetData(mdata, "sample.id");
-	#..pdata <- pdata[match(..all_ids, pdata[, opt$id_col]),];
-	#..pdata[, opt$id_col] <- ..all_ids;
-	#..pdata <- AnnotatedDataFrame(data.frame(sample.id = ..all_ids, ..pdata, stringsAsFactors=FALSE));
-
 	..gds <- mdata;
-	..num_markers <- length(seqGetData(..gds, "variant.id"));
+	..num_markers <- length(seqGetData(..gds, opt$gds_var_id));
 	..num_blocks <- ceiling(..num_markers / opt$block_size);
 	..block_start <- ((1:..num_blocks) - 1) * opt$block_size + 1;
 	..block_end   <- ((1:..num_blocks) * opt$block_size);
 	..block_end[..num_blocks] <- ..num_markers;
+	..males <- pdata[, opt$sex] == "M";
+	..females <- !..males;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
+		if (opt$debug) cat("Block #", ..block_no, "\n");
 		seqSetFilter(..gds, variant.sel = ..block_start[..block_no]:..block_end[..block_no], sample.id = ..ids, verbose = FALSE);
 		mdata <- t(altDosage(..gds));
-		#mdata <- SeqVarData(..gds, sampleData=..pdata);
-		mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids];
-		cur_result <- do.call(rbind, ..fun(1:NROW(mdata), doOne));
-		rownames(cur_result) <- rownames(mdata);
-		result_all <- rbind(result_all, cur_result);
+		mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
+		if (opt$analysis_type == "gwas") {
+			if (opt$chromosome == "X") {
+				..count_f <- rowSums(mdata[, ..females, drop = FALSE], na.rm = TRUE);
+				..n_f <- rowSums(!is.na(mdata[, ..females, drop = FALSE]));
+				..count_m <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
+				..n_m <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
+				mac <- pmin(..count_f, 2*..n_f - ..count_f) + pmin(..count_m, ..n_m - ..count_m);
+				maf <- mac / (2*..n_f + ..n_m);
+				..n <- ..n_f + ..n_m;
+				rm(..count_f, ..count_m, ..n_f, ..n_m);
+			} else if (opt$chromosome == "Y") {
+				..count <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
+				..n <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
+				mac <- pmin(..count, ..n - ..count);
+				maf <- mac / ..n;
+				rm(..count);
+			} else {
+				..count <- rowSums(mdata, na.rm = TRUE);
+				..n <- rowSums(!is.na(mdata));
+				mac <- pmin(..count, 2*..n - ..count);
+				maf <- mac / (2 * ..n);
+				rm(..count);
+			}
+			..b <- mac >= opt$mac_threshold;
+			if (!is.na(opt$maf_threshold)) {
+				..b <- b & (maf >= opt$maf_threshold);
+			}
+			..sb <- sum(..b);
+			if (..sb < NROW(mdata)) {
+				mdata <- mdata[..b, , drop=FALSE];
+			}
+			rm(..sb);
+		}
+		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
+		if (NROW(mdata) > 0) {
+			cur_result <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
+			if (opt$analysis_type == "gwas") {
+				cur_result <- cbind(N=..n, MAC=mac, MAF=maf, cur_result);
+			}
+			rownames(cur_result) <- rownames(mdata);
+			result_all <- rbind(result_all, cur_result);
+		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
 	}
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
-	result_all <- do.call(rbind, ..fun(1:NROW(mdata), doOne));
+	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
+	# TODO: Partial loading for text
 }
 
 # Dispose progress bar
@@ -541,9 +597,9 @@ if (!is.na(opt$annot_cols)) {
 }
 
 if (!opt$save_as_binary) {
-	cat("Saving output as text to", outfile, "\n");
+	cat("Saving output as text to", opt$out_file, "\n");
 	fwrite(result_all, bzfile(opt$out_file, "w"), row.names=TRUE);
 } else {
-	cat("Saving output as binary to", outfile, "\n");
+	cat("Saving output as binary to", opt$out_file, "\n");
 	saveRDS(result_all, file=opt$out_file, compress="bz2");
 }

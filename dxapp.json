@@ -11,23 +11,23 @@
     {
       "name": "omics_file",
       "label": "Main data file",
-      "help": "Num markers x num obs. Must have header and row name.",
+      "help": "The main data file containing SNPs or transcripts or other omics dataset. For matrix type, the assumption is num markers x num obs. Must have header and row name. Will be stored as 'mdata'. Note: .rds / .rda / .RData will be loaded to memory in one swoop, which is a bad idea for a big analysis.",
       "class": "file",
-      "patterns": ["*.txt", "*.csv", "*.Rda", "*.Rds", "*.RData", "*.rda", "*.rds"],
+      "patterns": ["*.txt", "*.csv", "*.Rda", "*.Rds", "*.RData", "*.rda", "*.rds", "*.gds", "*.bmat.tar"],
       "optional": false
     },
     {
       "name": "block_size",
       "label": "Block size",
-      "help": "How many rows you wish to load at a time. The larger the number, the higher the burden of the computation. If the number is too small, it may be bogged down by the disk speed. Use your judgment. Leave default if in doubt. This is ignored if you set the 'Load all' to true.",
+      "help": "How many rows you wish to load at a time. The larger the number, the higher the burden of the computation. If the number is too small, it may be bogged down by the disk speed. Use your judgment. Leave default if in doubt. This is ignored if you set the 'Load all' to true or if the data is in .rds / .rda / .RData format.",
       "class": "int",
       "optional": true,
-      "default": 5000
+      "default": 10000
     },
     {
       "name": "pheno_file",
       "label": "Phenotype file",
-      "help": "Num obs x num variables. Must have header. Note: any column names with spaces or punctuations will be mangled as per R convention.",
+      "help": "Num obs x num variables. Must have header. Will be stored as 'pdata'. Note: any column names with spaces or punctuations will be mangled as per R convention.",
       "class": "file",
       "patterns": ["*.txt", "*.csv"],
       "optional": false
@@ -48,7 +48,7 @@
     {
       "name": "save_as_binary",
       "label": "Save as binary",
-      "help": "Save the output as binary (.rds format)?",
+      "help": "If true, assoctool will save the output as binary (R's .rds format). Use R's readRDS to read the rds format.",
       "class": "boolean",
       "optional": true,
       "default": false
@@ -56,7 +56,7 @@
     {
       "name": "compress_output",
       "label": "Compress output file",
-      "help": "Do you want to compress the output file? Not recommended if you select 'Save as binary' option",
+      "help": "Do you want to compress the output file? Not recommended if you select 'Save as binary' option because RDS format is already compressed.",
       "class": "string",
       "choices": ["NONE", "GZIP", "BZ2", "XZ"],
       "optional": true,
@@ -76,6 +76,15 @@
       "help": "Column names in phenotypic file that should be treated as factors instead of numeric. A comma separated list. This is useful when your batches are in numeric values.",
       "class": "string",
       "optional": true
+    },
+    {
+      "name": "analysis_type",
+      "label": "Analysis type",
+      "help": "Analysis type.",
+      "class": "string",
+      "optional": false,
+	  "choices": ["GWAS", "EPIGENOME", "TRANSCRIPTOME", "PROTEIN", "METABOLITE", "MICROBIOME", "GENERIC"],
+      "default": "GWAS"
     },
     {
       "name": "method",
@@ -111,14 +120,14 @@
     {
       "name": "fn_param_list",
       "label": "Function parameter list",
-      "help": "Comma-separated parameter list that you pass to the main analysis function. Must be valid R expression. For example: You want a weighted regression in LMM (for which lme4's lmer will be called) and you store the weights in the phenotype file in column called 'WGTs'. In addition, you want an maximum likelihood fit rather than the default REML. So you would list 'weights=pdata[, \"WGTs\"],REML=FALSE'",
+      "help": "Comma-separated parameter list that you pass to the main analysis function. Must be valid R expression. For example: You want a weighted regression in LMM (for which lme4's lmer will be called) and you store the weights in the phenotype file in column called 'WGTs'. In addition, you want an maximum likelihood fit rather than the default REML. So you would list 'weights=pdata[, \"WGTs\"],REML=FALSE'. Of course, in this example, you will need the column WGTs in your phenotype file.",
       "class": "string",
       "optional": true
     },
     {
       "name": "annot_file",
       "label": "Annotation file",
-      "help": "Annotation file for filtering variants / markers. If not specified, then no filtering is done",
+      "help": "Annotation file for filtering variants / markers. If not specified, then no filtering is done. If loaded from .rda / .rds / .RData, it must be in data.frame format.",
       "class": "file",
       "patterns": ["*.txt", "*.csv", "*.Rda", "*.Rds", "*.RData", "*.rda", "*.rds"],
       "optional": true
@@ -133,11 +142,11 @@
     {
       "name": "annot_filter_criteria",
       "label": "Annotation filter criteria",
-      "help": "R-style expression. Example: MAF>=0.01 & Chr==\"19\". In that example, your annotation file MUST have MAF and Chr columns. You must fill this if you fill in annotation file.",
+      "help": "R-style expression. Example: Impute_RSq>=0.3 & Chr==\"19\". In that example, your annotation file MUST have Impute_RSq and Chr columns. You must fill this if you fill in annotation file. Note that it is not advisable to filter MAF/MAC based on annotation file. See MAF / MAC threshold options below.",
       "class": "string",
       "optional": true
     },
-     {
+    {
       "name": "annot_cols",
       "label": "Annotation columns",
       "help": "Comma-separated annotation column list indicating which columns (in that order) you want to annotate your results with. Leave blank if you do not want to annotate your results.",
@@ -145,17 +154,64 @@
       "optional": true
     },
     {
+      "name": "maf_threshold",
+      "label": "MAF Threshold",
+      "help": "Anything below this Minor Allele Frequency threshold will be eliminated. Note: The MAF will computed on the fly (using data for which there are phenotypes). Also, you MUST supply the chromosome name.",
+      "class": "float",
+      "optional": true
+    },
+    {
+      "name": "mac_threshold",
+      "label": "MAC Threshold",
+      "help": "Anything below this Minor Allele Count threshold will be eliminated. Note: The MAC will computed on the fly (using data for which there are phenotypes). Also, you MUST supply the chromosome name. If both MAF and MAC threshold are filled, then only SNPs that fulfill both criteria will be analyzed.",
+      "class": "int",
+      "default": 1,
+      "optional": true
+    },
+    {
+      "name": "chromosome",
+      "label": "Chromosome",
+      "help": "Chromosome name. Only applicable for GWAS analyses. Enter X, Y, or MT for X, Y, or mitochondrial chromosome. Anything else will be treated as autosome.",
+      "class": "string",
+      "default": "autosome",
+      "optional": true
+    },
+    {
+      "name": "sex",
+      "label": "Column name for Sex",
+      "help": "Column name in phenotype file that indicates sex. Only applicable for GWAS analyses; ignored for other analysis types. MUST be encoded as M or F to indicate males and females, respectively (again, only for GWAS case). This is only used to compute MAF / MAC.",
+      "class": "string",
+      "default": "sex",
+      "optional": true
+    },
+    {
+      "name": "gds_var_id",
+      "label": "GDS Variant ID attribute",
+      "help": "The name of variant ID field in GDS file. Defaults to variant.id. Only applicable for GDS format.",
+      "class": "string",
+      "default": "variant.id",
+      "optional": true
+    },
+    {
+      "name": "gds_sample_id",
+      "label": "GDS Sample ID attribute",
+      "help": "The name of sample ID field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "class": "string",
+      "default": "sample.id",
+      "optional": true
+    },
+    {
       "name": "pedigree_file",
       "label": "Pedigree file",
-      "help": "Pedigree file for pedigree-based analysis. If you fill one in, you MUST fill in the pedigree ID, father and mother IDs.",
+      "help": "Pedigree file for pedigree-based analysis. Will be stored as 'ped'. If you put in a .txt or .csv, the assumption is the pedigree is to be constructed (either through kinship or pedigreemm). In that case, you MUST fill in the pedigree ID, father and mother IDs. For .rds, .rda, or .RData formats, the assumption will always be a matrix (sparse/dense). Note: assoctool will NOT filter the pedigree matrix (not for now at least).",
       "class": "file",
-      "patterns": ["*.txt", "*.csv"],
+      "patterns": ["*.txt", "*.csv", ".rds", ".rda", ".RData"],
       "optional": true
     },
     {
       "name": "pedigree_type",
       "label": "Pedigree type",
-      "help": "Pedigree type.",
+      "help": "Pedigree type. For sparse / dense matrix-based pedigree, you MUST use rds / rda / RData format.",
       "class": "string",
       "optional": true,
 	  "choices": ["KINSHIP1", "KINSHIP2", "PEDIGREEMM", "SPARSE_MATRIX", "DENSE_MATRIX"],
