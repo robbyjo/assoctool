@@ -574,6 +574,14 @@ if (opt$progress_bar) {
 # Remove ALL temporary variables
 rm(list=ls(all.names=TRUE)[grep("^\\.\\.", ls(all.names=TRUE))]);
 
+if (opt$debug) {
+	cat("class(result_all):\n");
+	print(class(result_all));
+	cat("dim(result_all):\n");
+	print(dim(result_all));
+	cat("colnames(result_all):\n");
+	print(colnames(result_all));
+}
 
 for (..col in grep("^P_", colnames(result_all))) {
 	cat("Lambda of ", colname, "=",lambda(result_all[,..col]), "\n");
