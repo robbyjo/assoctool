@@ -260,6 +260,14 @@
       "class": "boolean",
       "optional": true,
       "default": false
+    },
+    {
+      "name": "progress_bar",
+	  "label": "Progress bar",
+      "help": "Show progress bar in command line mode",
+      "class": "boolean",
+      "optional": true,
+      "default": false
     }
   ],
   "outputSpec": [
