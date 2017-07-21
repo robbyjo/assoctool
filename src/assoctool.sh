@@ -24,10 +24,6 @@
 # dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.0 assoctool
 
 main() {
-    sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak
-    mv /etc/default/sysstat.bak /etc/default/sysstat
-    /etc/init.d/sysstat start
-
     echo "Value of omics_file: '$omics_file'"
     echo "Value of output_file: '$output_file'"
     echo "Value of save_as_binary: '$save_as_binary'"
@@ -194,6 +190,10 @@ main() {
         PARMS+=(--debug="$debug")
     fi
 
+    if [[ "$progress_bar" != "" ]] ; then
+        PARMS+=(--progress_bar="$progress_bar")
+    fi
+
     echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
@@ -213,17 +213,28 @@ main() {
     echo "Running profiling (sar)"
     sar -u 10 > /data/benchmark.prof &
 
-    echo "Rscript assoctool.R ${PARMS[@]}"
-    echo "Running code"
-    dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /usr/bin/Rscript --vanilla /data/assoctool/assoctool.R "${PARMS[@]}"
-    echo "Finished running code"
+    echo '#!/bin/bash' > /data/runme.sh
+    echo 'echo "Setting up profiling"' >> /data/runme.sh
+    echo 'sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak' >> /data/runme.sh
+    echo 'mv /etc/default/sysstat.bak /etc/default/sysstat' >> /data/runme.sh
+    echo '/etc/init.d/sysstat start' >> /data/runme.sh
+    x="Rscript assoctool.R ${PARMS[@]}"
+    echo "echo \"$x\"" >> /data/runme.sh
+    echo 'echo "Running code"' >> /data/runme.sh
+    x="/usr/bin/Rscript --vanilla /data/assoctool/assoctool.R ${PARMS[@]}"
+    echo "$x" >> /data/runme.sh
+    echo 'echo "Finished running code"' >> /data/runme.sh
+    echo 'echo "Benchmark results:"' >> /data/runme.sh
+    echo 'echo "=========================== BEGIN ==========================="' >> /data/runme.sh
+    echo 'cat /data/benchmark.prof' >> /data/runme.sh
+    echo 'echo "============================ END ============================"' >> /data/runme.sh
+    chmod 700 /data/runme.sh
 
-    echo "Killing profiling code"
-    killall sar
-    echo "Benchmark results:"
-    echo "=========================== BEGIN ==========================="
-    cat /data/benchmark.prof
-    echo "============================ END ============================"
+    echo "============================ Script begin ============================ "
+    cat /data/runme.sh
+    echo "============================= Script end ============================= "
+
+    dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /bin/bash /data/runme.sh
 
     results="/data/results"
     if [ -e $results ] ; then
