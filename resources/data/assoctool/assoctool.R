@@ -511,6 +511,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..block_end[..num_blocks] <- ..num_markers;
 	..males <- pdata[, opt$sex] == "M";
 	..females <- !..males;
+	result_all <- list();
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
 		if (opt$debug) cat("Block #", ..block_no, "\n");
@@ -557,10 +558,11 @@ if (is(mdata, "SeqVarGDSClass")) {
 				cur_result <- cbind(N=..n, MAC=mac, MAF=maf, cur_result);
 			}
 			rownames(cur_result) <- rownames(mdata);
-			result_all <- rbind(result_all, cur_result);
+			result_all[[..block_no]] <- cur_result;
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
 	}
+	result_all <- rbindlist(result_all);
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
@@ -586,7 +588,7 @@ if (opt$debug) {
 }
 
 for (..col in grep("^P_", colnames(result_all))) {
-	cat("Lambda of ", colname, "=",lambda(result_all[,..col]), "\n");
+	cat("Lambda of ", ..col, "=",lambda(result_all[,..col]), "\n");
 	# Compute FDR (Benjamini & Hochberg)
 	if (opt$compute_fdr) {
 		result_all[, paste("FDR", colnames(result_all)[..col],sep="_")] <- p.adjust(result_all[, ..col], "BH");
