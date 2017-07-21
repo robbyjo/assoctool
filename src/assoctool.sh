@@ -239,10 +239,12 @@ main() {
     fi
 
     echo '#!/bin/bash' > /data/runme.sh
-    echo 'echo "Setting up profiling"' >> /data/runme.sh
-    echo 'sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak' >> /data/runme.sh
-    echo 'mv /etc/default/sysstat.bak /etc/default/sysstat' >> /data/runme.sh
-    echo '/etc/init.d/sysstat start' >> /data/runme.sh
+    if [ $debug == "true" ] ; then
+       echo 'echo "Setting up profiling"' >> /data/runme.sh
+       echo 'sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak' >> /data/runme.sh
+       echo 'mv /etc/default/sysstat.bak /etc/default/sysstat' >> /data/runme.sh
+       echo '/etc/init.d/sysstat start' >> /data/runme.sh
+    fi
     x="Rscript assoctool.R ${PARMS[@]}"
     echo "echo \"$x\"" >> /data/runme.sh
     if [ $debug == "true" ] ; then
