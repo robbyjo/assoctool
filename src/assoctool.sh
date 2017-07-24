@@ -21,9 +21,17 @@
 
 # Do not forget to do this:
 # sudo chmod 666 /var/run/docker.sock
-# dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.0 assoctool
+# dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.1 assoctool
 
 main() {
+    if [ $debug == "true" ] ; then
+       echo "Setting up profiling"
+       DEBIAN_FRONTEND=noninteractive apt-get update
+       DEBIAN_FRONTEND=noninteractive apt-get -y install sysstat
+       sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak
+       mv /etc/default/sysstat.bak /etc/default/sysstat
+       /etc/init.d/sysstat start
+    fi
     echo "Value of omics_file: '$omics_file'"
     echo "Value of output_file: '$output_file'"
     echo "Value of save_as_binary: '$save_as_binary'"
@@ -68,6 +76,8 @@ main() {
     echo "Value of pedigree_mother: '$pedigree_mother'"
     echo "Value of pedigree_sex: '$pedigree_sex'"
 
+    #echo "Value of from: '$from'"
+    #echo "Value of to: '$to'"
     echo "Value of num_cores: '$num_cores'"
     echo "Value of block_size: '$block_size'"
     echo "Value of debug: '$debug'"
@@ -202,6 +212,13 @@ main() {
         PARMS+=(--pedigree_sex="$pedigree_sex")
     fi
 
+    #if [[ "$from" != "" ]] ; then
+    #    PARMS+=(--from="$from")
+    #fi
+    #if [[ "$to" != "" ]] ; then
+    #    PARMS+=(--to="$to")
+    #fi
+
     if [[ "$num_cores" != "" ]] ; then
         PARMS+=(--num_cores="$num_cores")
     fi
@@ -222,6 +239,9 @@ main() {
         PARMS+=(--progress_bar="$progress_bar")
     fi
 
+    if [ $debug == "true" ] ; then
+       sar -u 60 > /data/benchmark.prof &
+    fi
     echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
@@ -239,27 +259,13 @@ main() {
     fi
 
     echo '#!/bin/bash' > /data/runme.sh
-    if [ $debug == "true" ] ; then
-       echo 'echo "Setting up profiling"' >> /data/runme.sh
-       echo 'sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak' >> /data/runme.sh
-       echo 'mv /etc/default/sysstat.bak /etc/default/sysstat' >> /data/runme.sh
-       echo '/etc/init.d/sysstat start' >> /data/runme.sh
-    fi
+    echo 'export MKL_NUM_THREADS=1' >> /data/runme.sh
     x="Rscript assoctool.R ${PARMS[@]}"
     echo "echo \"$x\"" >> /data/runme.sh
-    if [ $debug == "true" ] ; then
-       echo "sar -u 60 > /data/benchmark.prof &" >> /data/runme.sh
-    fi
     echo 'echo "Running code"' >> /data/runme.sh
     x="/usr/bin/Rscript --vanilla /data/assoctool/assoctool.R ${PARMS[@]}"
     echo "$x" >> /data/runme.sh
     echo 'echo "Finished running code"' >> /data/runme.sh
-    if [ $debug == "true" ] ; then
-       echo 'echo "Benchmark results:"' >> /data/runme.sh
-       echo 'echo "=========================== BEGIN ==========================="' >> /data/runme.sh
-       echo 'cat /data/benchmark.prof' >> /data/runme.sh
-       echo 'echo "============================ END ============================"' >> /data/runme.sh
-    fi
     chmod 700 /data/runme.sh
 
     echo "============================ Script begin ============================ "
@@ -268,6 +274,13 @@ main() {
 
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /bin/bash /data/runme.sh
 
+    if [ $debug == "true" ] ; then
+       echo "Benchmark results:"
+       echo "=========================== BEGIN ==========================="
+       cat /data/benchmark.prof
+       echo "============================ END ============================"
+       pkill sar
+    fi
     results="/data/results"
     if [ -e $results ] ; then
        if [[ $compress_output == "GZIP" ]] ; then
