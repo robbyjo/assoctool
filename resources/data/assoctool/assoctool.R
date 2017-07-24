@@ -116,6 +116,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$num_cores <- processIntegerArg(args["num_cores"], "num_cores");
 	opt$progress_bar <- processBooleanArg(args["progress_bar"], "progress_bar");
 	opt$debug <- processBooleanArg(args["debug"], "progress_bar");
+	#opt$from <- processIntegerArg(args["from"], "from");
+	#opt$to <- processIntegerArg(args["to"], "to");
 	
 	# Parameter validation / sanity check before any loading takes place
 	opt$recognized_analysis <- c("gwas", "epigenome", "transcriptome", "protein", "metabolite", "microbiome", "generic");
@@ -511,7 +513,6 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..block_end[..num_blocks] <- ..num_markers;
 	..males <- pdata[, opt$sex] == "M";
 	..females <- !..males;
-	result_all <- list();
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
 		if (opt$debug) cat("Block #", ..block_no, "\n");
@@ -558,11 +559,10 @@ if (is(mdata, "SeqVarGDSClass")) {
 				cur_result <- cbind(N=..n, MAC=mac, MAF=maf, cur_result);
 			}
 			rownames(cur_result) <- rownames(mdata);
-			result_all[[..block_no]] <- cur_result;
+			result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
 	}
-	result_all <- rbindlist(result_all);
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);

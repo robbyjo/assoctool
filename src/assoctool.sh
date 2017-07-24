@@ -239,9 +239,6 @@ main() {
         PARMS+=(--progress_bar="$progress_bar")
     fi
 
-    if [ $debug == "true" ] ; then
-       sar -u 60 > /data/benchmark.prof &
-    fi
     echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
@@ -258,6 +255,10 @@ main() {
        echo "The phenofile is not ready"
     fi
 
+    if [ $debug == "true" ] ; then
+       echo "Running benchmark code... (sar)"
+       sar -u 60 > /data/benchmark.prof &
+    fi
     echo '#!/bin/bash' > /data/runme.sh
     echo 'export MKL_NUM_THREADS=1' >> /data/runme.sh
     x="Rscript assoctool.R ${PARMS[@]}"
