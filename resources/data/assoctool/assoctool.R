@@ -416,8 +416,9 @@ if (!opt$skip_loading_omics) {
 }
 
 if(is(mdata, "SeqVarGDSClass")) {
-	..included_marker_ids <- seqGetData(mdata, opt$gds_var_id);
+	..included_marker_ids <- as.character(seqGetData(mdata, opt$gds_var_id));
 } else ..included_marker_ids <- rownames(mdata);
+if (opt$debug) cat("Marker_ids:", ..included_marker_ids[1:20], "...\n");
 if (!opt$skip_loading_annotation) {
 	# Annotation loading and filtering (if any)
 	if (!is.na(opt$annot_file)) {
@@ -498,8 +499,7 @@ cat("The number of cores will be used:", opt$num_cores, "\n");
 options(mc.cores = opt$num_cores);
 
 # Show the size of your dataset in MB
-cat("Used memory (MB):\n");
-(used_mem <- gc(reset=TRUE)[2,2]);
+cat("Used memory (MB):", (used_mem <- gc(reset=TRUE)[2,2]), "\n");
 
 # Load the relevant plugins
 if (opt$method == "custom") {
@@ -516,6 +516,32 @@ if (opt$method == "custom") {
 
 result_all <- c();
 ..ids <- pdata[,opt$id_col];
+
+computeMAF <- function(mdata) {
+	if (opt$chromosome == "X") {
+		..count_f <- rowSums(mdata[, ..females, drop = FALSE], na.rm = TRUE);
+		..n_f <- rowSums(!is.na(mdata[, ..females, drop = FALSE]));
+		..count_m <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
+		..n_m <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
+		mac <- pmin(..count_f, 2*..n_f - ..count_f) + pmin(..count_m, ..n_m - ..count_m);
+		maf <- mac / (2*..n_f + ..n_m);
+		n <- ..n_f + ..n_m;
+		rm(..count_f, ..count_m, ..n_f, ..n_m);
+	} else if (opt$chromosome == "Y") {
+		..count <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
+		n <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
+		mac <- pmin(..count, n - ..count);
+		maf <- mac / n;
+		rm(..count);
+	} else {
+		..count <- rowSums(mdata, na.rm = TRUE);
+		n <- rowSums(!is.na(mdata));
+		mac <- pmin(..count, 2*n - ..count);
+		maf <- mac / (2 * n);
+		rm(..count);
+	}
+	return(list(mac, maf, n));
+}
 
 if (is(mdata, "SeqVarGDSClass")) {
 	..gds <- mdata;
@@ -538,40 +564,19 @@ if (is(mdata, "SeqVarGDSClass")) {
 		}
 		if (opt$analysis_type == "gwas") {
 			..m_time <- system.time({
-			if (opt$chromosome == "X") {
-				..count_f <- rowSums(mdata[, ..females, drop = FALSE], na.rm = TRUE);
-				..n_f <- rowSums(!is.na(mdata[, ..females, drop = FALSE]));
-				..count_m <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
-				..n_m <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
-				mac <- pmin(..count_f, 2*..n_f - ..count_f) + pmin(..count_m, ..n_m - ..count_m);
-				maf <- mac / (2*..n_f + ..n_m);
-				..n <- ..n_f + ..n_m;
-				rm(..count_f, ..count_m, ..n_f, ..n_m);
-			} else if (opt$chromosome == "Y") {
-				..count <- rowSums(mdata[, ..males, drop = FALSE], na.rm = TRUE);
-				..n <- rowSums(!is.na(mdata[, ..males, drop = FALSE]));
-				mac <- pmin(..count, ..n - ..count);
-				maf <- mac / ..n;
-				rm(..count);
-			} else {
-				..count <- rowSums(mdata, na.rm = TRUE);
-				..n <- rowSums(!is.na(mdata));
-				mac <- pmin(..count, 2*..n - ..count);
-				maf <- mac / (2 * ..n);
-				rm(..count);
-			}
-			..b <- mac >= opt$mac_threshold;
+			..mac_maf <- computeMAF(mdata);
+			..b <- ..mac_maf$mac >= opt$mac_threshold;
 			if (!is.na(opt$maf_threshold)) {
-				..b <- b & (maf >= opt$maf_threshold);
+				..b <- b & (..mac_maf$maf >= opt$maf_threshold);
 			}
 			..sb <- sum(..b);
 			if (..sb < NROW(mdata)) {
 				mdata <- mdata[..b, , drop=FALSE];
-				mac <- mac[..b];
-				maf <- maf[..b];
-				..n <- ..n[..b];
+				..mac_maf$mac <- ..mac_maf$mac[..b];
+				..mac_maf$maf <- ..mac_maf$maf[..b];
+				..mac_maf$n <- ..mac_maf$n[..b];
 			}
-			rm(..sb); });
+			});
 			if (opt$debug) cat("MAF filtering time:\n", ..m_time, "\n");
 		}
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
@@ -580,15 +585,18 @@ if (is(mdata, "SeqVarGDSClass")) {
 			cur_result <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores)); });
 			if (opt$debug) cat("Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
-				cur_result <- cbind(N=..n, MAC=mac, MAF=maf, cur_result);
+				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
 			}
+			cur_result <- data.frame(Marker=rownames(mdata), cur_result);
 			rownames(cur_result) <- rownames(mdata);
 			result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
+		result_all <- rbindlist(result_all);
 	}
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
+	result_all <- data.frame(Marker=rownames(mdata), result_all);
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
 	# TODO: Partial loading for text
 }
@@ -634,7 +642,7 @@ if (!is.na(opt$annot_cols)) {
 
 if (!opt$save_as_binary) {
 	cat("Saving output as text to", opt$out_file, "\n");
-	fwrite(data.table(result_all), opt$out_file, row.names=TRUE);
+	fwrite(result_all, opt$out_file, row.names=FALSE);
 } else {
 	cat("Saving output as binary to", opt$out_file, "\n");
 	saveRDS(result_all, file=opt$out_file, compress="bz2");
