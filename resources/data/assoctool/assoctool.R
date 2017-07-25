@@ -74,6 +74,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 
 	# Method and analysis related options
 	opt$analysis_type <- tolower(trim(args["analysis_type"]));
+	if (is.na(opt$analysis_type) | opt$analysis_type == "") opt$analysis_type <- "gwas";
 	opt$method <- args["method"];
 	opt$formula_str <- args["formula"];
 	opt$tx_fun_str <- args["tx_fun"];
@@ -98,11 +99,14 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$chromosome <- tolower(args["chromosome"]);
 	if (!(opt$chromosome %in% c("x", "y", "mt"))) opt$chromosome <- "autosome";
 	opt$sex <- args["sex"];
+	if (is.na(opt$sex) | opt$sex == "") opt$sex <- "sex";
 
 	# GDS related options
 	opt$gds_var_id <- args["gds_var_id"];
+	if (is.na(opt$gds_var_id) | opt$gds_var_id == "") opt$gds_var_id <- "variant.id";
 	opt$gds_sample_id <- args["gds_sample_id"];
-
+	if (is.na(opt$gds_sample_id) | opt$gds_sample_id == "") opt$gds_sample_id <- "sample.id";
+	
 	# Pedigree related options
 	opt$pedigree_file <- args["pedigree_file"];
 	opt$pedigree_id_col <- args["pedigree_id_col"];
@@ -151,7 +155,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	if (!is.na(opt$annot_file)) {
 		if (is.na(opt$annot_marker_id)) stop("If you specify annotation file, you MUST mention which column name contains the ID.");
 	} else {
-		cat("No annotation file is specified. Assume every marker.\n")
+		cat("No annotation file is specified.\n")
 	}
 	if (is.na(opt$omics_var_name)) opt$omics_var_name <- "y";
 	if (!is.na(opt$result_var_name)) {
