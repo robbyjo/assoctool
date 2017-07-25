@@ -540,7 +540,7 @@ computeMAF <- function(mdata) {
 		maf <- mac / (2 * n);
 		rm(..count);
 	}
-	return(list(mac, maf, n));
+	return(list(mac=mac, maf=maf, n=n));
 }
 
 if (is(mdata, "SeqVarGDSClass")) {
@@ -588,11 +588,9 @@ if (is(mdata, "SeqVarGDSClass")) {
 				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
 			}
 			cur_result <- data.frame(Marker=rownames(mdata), cur_result);
-			rownames(cur_result) <- rownames(mdata);
 			result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
-		result_all <- rbindlist(result_all);
 	}
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
