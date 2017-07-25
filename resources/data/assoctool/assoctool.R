@@ -354,10 +354,12 @@ if (!opt$skip_loading_pedigree) {
 
 if (!opt$skip_loading_omics) {
 	..fn <- tolower(opt$met_file);
+	..dim <- NA;
 	if (endsWith(..fn, ".rds")) {
 		cat("Loading", opt$met_file, "as RDS...\n");
 		mdata <- readRDS(opt$met_file);
 		if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
+		..dim <- dim(mdata);
 	} else if (endsWith(..fn, ".rda") | endsWith(..fn, ".rdata")) {
 		cat("Loading", opt$met_file, "as RDa...\n");
 		..vv <- load(opt$met_file);
@@ -376,18 +378,21 @@ if (!opt$skip_loading_omics) {
 		rm(list=..vv[..ii]); # We will not delete the other objects
 		rm(..vv, ..ii, ..lv);
 		if (class(mdata) != "matrix") mdata <- as.matrix(mdata);
+		..dim <- dim(mdata);
 	} else if (endsWith(..fn, ".gds")) {
 		cat("Loading", opt$met_file, "as GDS...\n");
 		suppressMessages(library(SeqArray));
 		suppressMessages(library(SeqVarTools));
 		suppressMessages(library(gdsfmt));
 		mdata <- seqOpen(opt$met_file);
+		..dim <- c(length(seqGetData(mdata, opt$gds_var_id)), length(seqGetData(mdata, opt$gds_sample_id)));
 	} else if (endsWith(..fn, ".bmat.tar")) {
 		cat("Loading", opt$met_file, "as .bmat.tar...\n");
 		..out <- untar(opt$met_file);
 		if (..out != 0) stop("Opening file failed!");
 		rm(..out);
 		mdata <- fm.open(gsub(".bmat.tar", "", opt$met_file, ignore.case=TRUE));
+		..dim <- dim(mdata);
 	} else {
 		# Assume text
 		cat("Loading", opt$met_file, "as text...\n");
@@ -395,22 +400,26 @@ if (!opt$skip_loading_omics) {
 		rownames(mdata) <- mdata[,1];
 		mdata <- mdata[, -1];
 		mdata <- as.matrix(mdata);
+		..dim <- dim(mdata);
 	}
 
 	# Loading the entire dataset to the memory is not wise
 	if (is(mdata, "matrix") & !opt$load_all & NROW(mdata) > opt$block_size) {
 		cat("Converting data matrix into filematrix .bmat format...\n");
 		mdata <- fm.create.from.matrix("mdata-temp", mdata);
+		..dim <- dim(mdata);
 		# Force R to relinquish any unused memory
 		while(gc(reset=TRUE)[2,3] != gc(reset=TRUE)[2,3]) {}
 	}
 	rm(..fn);
-	cat("Main file has been loaded. Dimension:", dim(mdata), "\n");
+	cat("Main file has been loaded. Dimension:", ..dim, "\n");
 }
 
+if(is(mdata, "SeqVarGDSClass")) {
+	..included_marker_ids <- seqGetData(mdata, opt$gds_var_id);
+} else ..included_marker_ids <- rownames(mdata);
 if (!opt$skip_loading_annotation) {
 	# Annotation loading and filtering (if any)
-	..included_marker_ids <- ifelse(is(mdata, "SeqVarGDSClass"), seqGetData(mdata, opt$gds_var_id), rownames(mdata));
 	if (!is.na(opt$annot_file)) {
 		cat("Loading annotation", opt$annot_file, "\n");
 		annot_data <- fread(opt$annot_file);
@@ -456,7 +465,7 @@ if (!opt$skip_matching) {
 	} else {
 		..ids <- intersect(as.character(colnames(mdata)), as.character(pdata[, opt$id_col]));
 		if (length(..ids) == 0) stop("There is no common IDs between those specified in the phenotype data vs. the main data!");
-		cat("There are", length(..ids), "IDs in common\n");
+		cat("There are", length(..ids), " sample IDs in common\n");
 		pdata <- pdata[match(..ids, pdata[,opt$id_col]), ];
 	}
 	rm(..ids);
@@ -519,11 +528,16 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..females <- !..males;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 	for (..block_no in 1:..num_blocks) {
-		if (opt$debug) cat("Block #", ..block_no, "\n");
+		if (opt$debug) cat("Block #", ..block_no, ":", ..block_start[..block_no], "to", ..block_end[..block_no], "\n");
 		seqSetFilter(..gds, variant.sel = ..block_start[..block_no]:..block_end[..block_no], sample.id = ..ids, verbose = FALSE);
-		mdata <- t(altDosage(..gds));
-		mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
+		..l_time <- system.time({ mdata <- t(altDosage(..gds)); });
+		..i_time <- system.time({ mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE]; });
+		if (opt$debug) {
+			cat("Loading time:\n", ..l_time, "\n");
+			cat("Reindexing time:\n", ..i_time, "\n");
+		}
 		if (opt$analysis_type == "gwas") {
+			..m_time <- system.time({
 			if (opt$chromosome == "X") {
 				..count_f <- rowSums(mdata[, ..females, drop = FALSE], na.rm = TRUE);
 				..n_f <- rowSums(!is.na(mdata[, ..females, drop = FALSE]));
@@ -553,12 +567,18 @@ if (is(mdata, "SeqVarGDSClass")) {
 			..sb <- sum(..b);
 			if (..sb < NROW(mdata)) {
 				mdata <- mdata[..b, , drop=FALSE];
+				mac <- mac[..b];
+				maf <- maf[..b];
+				..n <- ..n[..b];
 			}
-			rm(..sb);
+			rm(..sb); });
+			if (opt$debug) cat("MAF filtering time:\n", ..m_time, "\n");
 		}
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
-			cur_result <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
+			..a_time <- system.time({
+			cur_result <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores)); });
+			if (opt$debug) cat("Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(N=..n, MAC=mac, MAF=maf, cur_result);
 			}
@@ -592,7 +612,7 @@ if (opt$debug) {
 }
 
 for (..col in grep("^P_", colnames(result_all))) {
-	cat("Lambda of ", ..col, "=",lambda(result_all[,..col]), "\n");
+	cat("Lambda of", colnames(result_all)[..col], "=",lambda(result_all[,..col]), "\n");
 	# Compute FDR (Benjamini & Hochberg)
 	if (opt$compute_fdr) {
 		result_all[, paste("FDR", colnames(result_all)[..col],sep="_")] <- p.adjust(result_all[, ..col], "BH");
@@ -614,7 +634,7 @@ if (!is.na(opt$annot_cols)) {
 
 if (!opt$save_as_binary) {
 	cat("Saving output as text to", opt$out_file, "\n");
-	fwrite(result_all, bzfile(opt$out_file, "w"), row.names=TRUE);
+	fwrite(data.table(result_all), opt$out_file, row.names=TRUE);
 } else {
 	cat("Saving output as binary to", opt$out_file, "\n");
 	saveRDS(result_all, file=opt$out_file, compress="bz2");
