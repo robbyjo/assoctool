@@ -68,7 +68,7 @@ processIntegerArg <- function(v, var_name, default=NA) {
 		if (isWholeNumber(v)) return (v);
 		return (default);
 	}
-	if (is.na(v)) return(v);
+	if (is.na(v)) return(default);
 	# Attempt to intelligently convert to numeric
 	v <- as.numeric(as.character(v));
 	if (!is.na(v)) return(v);
