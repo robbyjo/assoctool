@@ -313,14 +313,7 @@
     {
       "name": "debug",
 	  "label": "Debug output",
-      "class": "boolean",
-      "optional": true,
-      "default": false
-    },
-    {
-      "name": "progress_bar",
-	  "label": "Progress bar",
-      "help": "Show progress bar in command line mode",
+	  "help": "Show debug information in command line mode",
       "class": "boolean",
       "optional": true,
       "default": false
