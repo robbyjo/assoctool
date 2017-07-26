@@ -48,7 +48,7 @@ if (is.null(param_list[['varlist']]) & isDefined(ped)) {
 	print(param_list$formula);
 }
 doOne <- function(i) {
-	param_list$data[, opt$omics_var_name] <- txFun(get(mdata, i));
+	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(lmekin, param_list);
 	# The author does NOT provide table output, so compute ourselves
 	fixedef <- result$coefficients$fixed;
