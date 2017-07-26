@@ -493,10 +493,14 @@ param_cmd <- "param_list <- ifelse(is.na(opt$fn_param_list), list(), paramToList
 # If not, use the serial version.
 
 # Show how many cores your machine has:
-library(parallel);
-if (is.na(opt$num_cores)) opt$num_cores <- detectCores(logical=TRUE);
+suppressMessages(library(parallel));
+suppressMessages(library(doMC))
+
+opt$max_cores <- detectCores(logical=TRUE);
+if (is.na(opt$num_cores) | opt$num_cores > opt$max_cores) opt$num_cores <- opt$max_cores;
 cat("The number of cores will be used:", opt$num_cores, "\n");
 options(mc.cores = opt$num_cores);
+registerDoMC(cores=opt$num_cores);
 
 # Show the size of your dataset in MB
 cat("Used memory (MB):", (used_mem <- gc(reset=TRUE)[2,2]), "\n");
@@ -553,7 +557,10 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..males <- pdata[, opt$sex] == "M";
 	..females <- !..males;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
-	for (..block_no in 1:..num_blocks) {
+	mcoptions <- list(preschedule=FALSE, set.seed=FALSE);
+	
+	result_all <- foreach (..block_no=1:..num_blocks, .combine=function(...){ rbindlist(list(...),fill=TRUE); },
+		.multicombine = TRUE, .inorder=FALSE, .options.multicore=mcoptions) %dopar% {
 		if (opt$debug) cat("Block #", ..block_no, ":", ..block_start[..block_no], "to", ..block_end[..block_no], "\n");
 		seqSetFilter(..gds, variant.sel = ..block_start[..block_no]:..block_end[..block_no], sample.id = ..ids, verbose = FALSE);
 		..l_time <- system.time({ mdata <- t(altDosage(..gds)); });
@@ -582,17 +589,19 @@ if (is(mdata, "SeqVarGDSClass")) {
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
-			cur_result <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores)); });
+			cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores)); });
 			if (opt$debug) cat("Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
 			}
 			cur_result <- data.frame(Marker=rownames(mdata), cur_result);
-			result_all <- rbind(result_all, cur_result);
+			#result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, ..block_no);
+		cur_result;
 	}
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
+	mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
 	result_all <- data.frame(Marker=rownames(mdata), result_all);
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
