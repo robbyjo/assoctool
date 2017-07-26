@@ -566,8 +566,8 @@ if (is(mdata, "SeqVarGDSClass")) {
 		..l_time <- system.time({ mdata <- t(altDosage(..gds)); });
 		..i_time <- system.time({ mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE]; });
 		if (opt$debug) {
-			cat("Loading time:\n", ..l_time, "\n");
-			cat("Reindexing time:\n", ..i_time, "\n");
+			cat("Block #", ..block_no, "- Loading time:\n", ..l_time, "\n");
+			cat("Block #", ..block_no, "- Reindexing time:\n", ..i_time, "\n");
 		}
 		if (opt$analysis_type == "gwas") {
 			..m_time <- system.time({
@@ -584,13 +584,13 @@ if (is(mdata, "SeqVarGDSClass")) {
 				..mac_maf$n <- ..mac_maf$n[..b];
 			}
 			});
-			if (opt$debug) cat("MAF filtering time:\n", ..m_time, "\n");
+			if (opt$debug) cat("Block #", ..block_no, "- MAF filtering time:\n", ..m_time, "\n");
 		}
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
 			cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores)); });
-			if (opt$debug) cat("Analysis time:\n", ..a_time, "\n");
+			if (opt$debug) cat("Block #", ..block_no, "- Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
 			}
