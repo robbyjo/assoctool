@@ -21,7 +21,7 @@ suppressMessages(library(pscl));
 eval(parse(text=param_cmd));
 param_list$y <- TRUE; # We need this for Rsq computation
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(zeroinfl, param_list);
 	tbl1 <- summary(result)$coef$count;

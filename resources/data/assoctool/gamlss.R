@@ -52,7 +52,7 @@ if (is.null(param_list[['i.control']])) {
 }
 
 # TODO: Check this function
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	suppressMessages(result <- do.call(gamlss, param_list));
 

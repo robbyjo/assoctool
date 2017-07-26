@@ -28,7 +28,7 @@ if (!is(param_list[['id']], "numeric")) {
 	param_list$id <- as.numeric(factor(param_list[['id']]));
 }
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	suppressMessages(result <- do.call(gee, param_list));
 	tbl <- summary(result)$coef[, c(1,4,5)]; # Always the robust estimate

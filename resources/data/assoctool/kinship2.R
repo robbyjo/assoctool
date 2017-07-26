@@ -47,7 +47,7 @@ if (is.null(param_list[['varlist']]) & isDefined(ped)) {
 	cat("Adding pedigree into formula:\n");
 	print(param_list$formula);
 }
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(lmekin, param_list);
 	# The author does NOT provide table output, so compute ourselves

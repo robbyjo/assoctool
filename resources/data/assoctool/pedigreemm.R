@@ -130,7 +130,7 @@ if (is(ped, "matrix") | is(ped, "Matrix")) {
 	}
 }
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(pedigreemm, param_list);
 	tbl <- summary(result)$coef;

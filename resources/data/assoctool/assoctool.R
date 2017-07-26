@@ -589,7 +589,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
-				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne)); });
+				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata)); });
 			if (opt$debug) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
@@ -604,7 +604,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 	result_all <- do.call(rbindlist, mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores));
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
-	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mc.cores=opt$num_cores));
+	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores));
 	result_all <- data.table(Marker=rownames(mdata), result_all);
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
 	# TODO: Partial loading for text

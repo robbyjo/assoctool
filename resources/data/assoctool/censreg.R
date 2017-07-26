@@ -19,7 +19,7 @@
 
 suppressMessages(library(censReg));
 eval(parse(text=param_cmd));
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(censReg, param_list);
 	tbl <- summary(result)$estimate;

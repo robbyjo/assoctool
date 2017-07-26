@@ -19,7 +19,7 @@
 
 suppressMessages(library(betareg));
 eval(parse(text=param_cmd));
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(betareg, param_list);
 	tbl <- summary(result)$coef;

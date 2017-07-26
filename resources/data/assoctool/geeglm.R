@@ -30,7 +30,7 @@ if (is.null(param_list[['id']])) {
 	param_list$id <- as.name(param_list$id);
 } else stop("You need to specify which column name in your phenotype data that will serve as cluster ID for geeglm.");
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(geeglm, param_list);
 	tbl <- summary(result)$coef;

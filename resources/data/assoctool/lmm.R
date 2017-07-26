@@ -37,7 +37,7 @@ if (is.null(param_list[['control']])) {
 	}
 }
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(..lmFun, param_list);
 	tbl <- summary(result)$coef;

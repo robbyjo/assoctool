@@ -25,7 +25,7 @@ eval(parse(text=param_cmd));
 if (is.null(param_list[['cite']]) | !is.logical(param_list[['cite']])) {
 	param_list$cite <- FALSE;
 }
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(zelig, param_list);
 	tbl <- c();

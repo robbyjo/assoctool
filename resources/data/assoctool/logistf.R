@@ -122,7 +122,7 @@ logistf <- function(formula = attr(data, "formula"), data = sys.parent(), pl = T
 
 eval(parse(text=param_cmd));
 
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(logistf, param_list);
 	tbl <- cbind(result$coefficients, sqrt(diag(result$var)), qchisq(result$prob, 1, lower.tail=FALSE), result$prob);

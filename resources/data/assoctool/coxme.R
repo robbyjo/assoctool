@@ -34,7 +34,7 @@ if (is.null(param_list[['varlist']]) & isDefined(ped)) {
 	cat("Adding pedigree into formula:\n");
 	print(param_list$formula);
 }
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	x <- do.call(coxme, param_list);
 	# coxme does not provide coefficient tables like the others, unfortunately. So, we need to copy and paste from print.coxme.R

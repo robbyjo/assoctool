@@ -42,7 +42,7 @@ if (!is.null(param_list[['use.pt']])) {
 	}
 	param_list$use.pt <- NULL;
 }
-doOne <- function(i) {
+doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(lmekin, param_list);
 	tbl <- result$ctable;
