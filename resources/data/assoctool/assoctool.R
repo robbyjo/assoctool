@@ -594,17 +594,17 @@ if (is(mdata, "SeqVarGDSClass")) {
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(N=..mac_maf$n, MAC=..mac_maf$mac, MAF=..mac_maf$maf, cur_result);
 			}
-			cur_result <- data.frame(Marker=rownames(mdata), cur_result);
+			cur_result <- data.table(Marker=rownames(mdata), cur_result);
 			#result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, block_no);
 		cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
 		cur_result;
 	}
-	result_all <- do.call(rbindlist, mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores));
+	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores));
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
-	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores));
+	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
 	result_all <- data.table(Marker=rownames(mdata), result_all);
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
 	# TODO: Partial loading for text
