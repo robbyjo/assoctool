@@ -201,6 +201,30 @@
       "optional": true
     },
     {
+      "name": "gds_chrom_id",
+      "label": "GDS chromosome attribute",
+      "help": "The name of chromosome field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "class": "string",
+      "default": "chromosome",
+      "optional": true
+    },
+    {
+      "name": "gds_pos_id",
+      "label": "GDS position attribute",
+      "help": "The name of position field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "class": "string",
+      "default": "position",
+      "optional": true
+    },
+    {
+      "name": "gds_allele_id",
+      "label": "GDS allele attribute",
+      "help": "The name of allele field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "class": "string",
+      "default": "allele",
+      "optional": true
+    },
+    {
       "name": "pedigree_file",
       "label": "Pedigree file",
       "help": "Pedigree file for pedigree-based analysis. Will be stored as 'ped'. If you put in a .txt or .csv, the assumption is the pedigree is to be constructed (either through kinship or pedigreemm). In that case, you MUST fill in the pedigree ID, father and mother IDs. For .rds, .rda, or .RData formats, the assumption will always be a matrix (sparse/dense). Note: assoctool will NOT filter the pedigree matrix (not for now at least).",

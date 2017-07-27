@@ -67,6 +67,9 @@ main() {
     echo "Value of sex: '$sex'"
     echo "Value of gds_var_id: '$gds_var_id'"
     echo "Value of gds_sample_id: '$gds_sample_id'"
+    echo "Value of gds_chrom_id: '$gds_chrom_id'"
+    echo "Value of gds_pos_id: '$gds_pos_id'"
+    echo "Value of gds_allele_id: '$gds_allele_id'"
 
     echo "Value of pedigree_file: '$pedigree_file'"
     echo "Value of pedigree_type: '$pedigree_type'"
@@ -179,6 +182,15 @@ main() {
     fi
     if [[ "$gds_sample_id" != "" ]] ; then
         PARMS+=(--gds_sample_id="$gds_sample_id")
+    fi
+    if [[ "$gds_chrom_id" != "" ]] ; then
+        PARMS+=(--gds_chrom_id="$gds_chrom_id")
+    fi
+    if [[ "$gds_pos_id" != "" ]] ; then
+        PARMS+=(--gds_pos_id="$gds_pos_id")
+    fi
+    if [[ "$gds_allele_id" != "" ]] ; then
+        PARMS+=(--gds_allele_id="$gds_allele_id")
     fi
     if [[ "$chromosome" != "" ]] ; then
         PARMS+=(--chromosome="$chromosome")
