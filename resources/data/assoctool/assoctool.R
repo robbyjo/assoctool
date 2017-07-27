@@ -126,8 +126,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$num_cores <- processIntegerArg(args["num_cores"], "num_cores");
 	opt$progress_bar <- processBooleanArg(args["progress_bar"], "progress_bar");
 	opt$debug <- processBooleanArg(args["debug"], "progress_bar");
-	#opt$from <- processIntegerArg(args["from"], "from");
-	#opt$to <- processIntegerArg(args["to"], "to");
+	opt$from <- processIntegerArg(args["from"], "from", 1);
+	opt$to <- processIntegerArg(args["to"], "to");
 	
 	# Parameter validation / sanity check before any loading takes place
 	opt$recognized_analysis <- c("gwas", "epigenome", "transcriptome", "protein", "metabolite", "microbiome", "generic");
@@ -570,10 +570,13 @@ computeMAF <- function(mdata, chr=opt$chromosome) {
 if (is(mdata, "SeqVarGDSClass")) {
 	..gds <- mdata;
 	..num_markers <- length(seqGetData(..gds, opt$gds_var_id));
+	if (is.na(opt$to)) opt$to <- ..num_markers;
+	if (is.na(opt$from)) opt$from <- 1;
+	..num_markers <- opt$to - opt$from + 1;
 	..num_blocks <- ceiling(..num_markers / opt$block_size);
-	..block_start <- ((1:..num_blocks) - 1) * opt$block_size + 1;
-	..block_end   <- ((1:..num_blocks) * opt$block_size);
-	..block_end[..num_blocks] <- ..num_markers;
+	..block_start <- ((1:..num_blocks) - 1) * opt$block_size + opt$from;
+	..block_end   <- ..block_start + opt$block_size - 1;
+	..block_end[..num_blocks] <- opt$to;
 	..males <- pdata[, opt$sex] == "M";
 	..females <- !..males;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
@@ -628,7 +631,9 @@ if (is(mdata, "SeqVarGDSClass")) {
 	}
 	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
-	mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
+	if (is.na(opt$to)) opt$to <- NROW(mdata);
+	if (is.na(opt$from)) opt$from <- 1;
+	mdata <- mdata[(rownames(mdata) %in% ..included_marker_ids) & ((1:NROW) %in% (opt$from:opt$to)), ..ids, drop=FALSE];
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
 	result_all <- data.table(Marker=rownames(mdata), result_all);
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);

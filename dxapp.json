@@ -321,7 +321,22 @@
       "optional": true
     },
     {
+      "name": "from",
+      "label": "First marker to analyze",
+      "help": "The index number of the first marker to analyze. Leave it blank if you want to analyze the whole file (and filter with annotation). This and 'to' are useful for partitioning jobs across several different cloud instances.",
+      "class": "int",
+      "optional": true
+    },
+    {
+      "name": "to",
+      "label": "Last marker to analyze",
+      "help": "The index number of the last marker to analyze. Leave it blank if you want to analyze the whole file (and filter with annotation). This and 'to' are useful for partitioning jobs across several different cloud instances.",
+      "class": "int",
+      "optional": true
+    },
+    {
       "name": "num_cores",
+      "label": "Number of cores",
       "help": "The number of cores (at least one) you wish to use for the analysis. If you leave it blank or fill it with invalid values, the program will try to use the maximum number available.",
       "class": "int",
       "optional": true

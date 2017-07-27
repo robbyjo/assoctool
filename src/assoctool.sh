@@ -224,12 +224,12 @@ main() {
         PARMS+=(--pedigree_sex="$pedigree_sex")
     fi
 
-    #if [[ "$from" != "" ]] ; then
-    #    PARMS+=(--from="$from")
-    #fi
-    #if [[ "$to" != "" ]] ; then
-    #    PARMS+=(--to="$to")
-    #fi
+    if [[ "$from" != "" ]] ; then
+        PARMS+=(--from="$from")
+    fi
+    if [[ "$to" != "" ]] ; then
+        PARMS+=(--to="$to")
+    fi
 
     if [[ "$num_cores" != "" ]] ; then
         PARMS+=(--num_cores="$num_cores")
