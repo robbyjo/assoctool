@@ -352,10 +352,10 @@
     {
       "name": "debug",
 	  "label": "Debug output",
-	  "help": "Show debug information in command line mode",
-      "class": "boolean",
+	  "help": "Show debug information in command line mode. Set 0 to disable. The greater the number the more verbose the output.",
+      "class": "int",
       "optional": true,
-      "default": false
+      "default": 0
     }
   ],
   "outputSpec": [

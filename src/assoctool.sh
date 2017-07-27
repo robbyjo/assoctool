@@ -24,7 +24,7 @@
 # dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.1 assoctool
 
 main() {
-    if [ $debug == "true" ] ; then
+    if [ $debug -gt 0 ] ; then
        echo "Setting up profiling"
        DEBIAN_FRONTEND=noninteractive apt-get update
        DEBIAN_FRONTEND=noninteractive apt-get -y install sysstat
@@ -267,7 +267,7 @@ main() {
        echo "The phenofile is not ready"
     fi
 
-    if [ $debug == "true" ] ; then
+    if [ $debug -gt 0 ] ; then
        echo "Running CPU benchmark code... (sar)"
        sar -u 60 > /data/cpu_benchmark.prof &
        echo "Running RAM benchmark code... (vmstat)"
@@ -289,7 +289,7 @@ main() {
 
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /bin/bash /data/runme.sh
 
-    if [ $debug == "true" ] ; then
+    if [ $debug -gt 0 ] ; then
        echo "CPU benchmark results:"
        echo "=========================== BEGIN ==========================="
        cat /data/cpu_benchmark.prof
@@ -320,7 +320,7 @@ main() {
        results=$(dx upload ${results} --brief)
        echo "Uploaded results: '$results'"
        dx-jobutil-add-output results "$results" --class=file
-       if [ $debug == "true" ] ; then
+       if [ $debug -gt 1 ] ; then
           echo "Working directory is:"
           pwd
           echo "===== Listing pwd ====="

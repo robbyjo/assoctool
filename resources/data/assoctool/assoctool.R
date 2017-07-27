@@ -125,7 +125,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	# Miscellaneous options
 	opt$num_cores <- processIntegerArg(args["num_cores"], "num_cores");
 	opt$progress_bar <- processBooleanArg(args["progress_bar"], "progress_bar");
-	opt$debug <- processBooleanArg(args["debug"], "progress_bar");
+	opt$debug <- processIntegerArg(args["debug"], "debug", 0);
 	opt$from <- processIntegerArg(args["from"], "from", 1);
 	opt$to <- processIntegerArg(args["to"], "to");
 	
@@ -424,7 +424,7 @@ if (!opt$skip_loading_omics) {
 if(is(mdata, "SeqVarGDSClass")) {
 	..included_marker_ids <- as.character(seqGetData(mdata, opt$gds_var_id));
 } else ..included_marker_ids <- rownames(mdata);
-if (opt$debug) cat("Marker_ids:", ..included_marker_ids[1:20], "...\n");
+if (opt$debug > 1) cat("Marker_ids:", ..included_marker_ids[1:20], "...\n");
 if (!opt$skip_loading_annotation) {
 	# Annotation loading and filtering (if any)
 	if (!is.na(opt$annot_file)) {
@@ -582,11 +582,11 @@ if (is(mdata, "SeqVarGDSClass")) {
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 
 	doOneBlock <- function(block_no) {
-		if (opt$debug) cat("Block #", block_no, ":", ..block_start[block_no], "to", ..block_end[block_no], "\n");
+		if (opt$debug > 0) cat("Block #", block_no, ":", ..block_start[block_no], "to", ..block_end[block_no], "\n");
 		seqSetFilter(..gds, variant.sel = ..block_start[block_no]:..block_end[block_no], sample.id = ..ids, verbose = FALSE);
 		..l_time <- system.time({ mdata <- t(altDosage(..gds)); });
 		..i_time <- system.time({ mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE]; });
-		if (opt$debug) {
+		if (opt$debug > 1) {
 			cat("Block #", block_no, "- Loading time:\n", ..l_time, "\n");
 			cat("Block #", block_no, "- Reindexing time:\n", ..i_time, "\n");
 			cat("Block #", block_no, "- dim(mdata) Before MAF filter:\n", dim(mdata), "\n");
@@ -609,7 +609,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 					..metadata <- ..metadata[..b, ];
 				}
 			});
-			if (opt$debug) {
+			if (opt$debug > 1) {
 				cat("Block #", block_no, "- MAF filtering time:\n", ..m_time, "\n");
 				cat("Block #", block_no, "- dim(mdata) After MAF filter:\n", dim(mdata), "\n");
 			}
@@ -618,7 +618,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
 				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata)); });
-			if (opt$debug) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
+			if (opt$debug > 1) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(..metadata, cur_result);
 			}
@@ -626,7 +626,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 			#result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, block_no);
-		if (opt$debug) cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
+		if (opt$debug > 1) cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
 		cur_result;
 	}
 	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
@@ -649,7 +649,7 @@ if (opt$progress_bar) {
 # Remove ALL temporary variables
 rm(list=ls(all.names=TRUE)[grep("^\\.\\.", ls(all.names=TRUE))]);
 
-if (opt$debug) {
+if (opt$debug > 1) {
 	cat("class(result_all):\n");
 	print(class(result_all));
 	cat("dim(result_all):\n");
