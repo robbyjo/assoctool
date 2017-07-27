@@ -601,7 +601,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 		cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
 		cur_result;
 	}
-	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores));
+	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE];
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
