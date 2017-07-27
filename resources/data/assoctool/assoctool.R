@@ -109,9 +109,9 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$gds_chrom_id <- args["gds_chrom_id"];
 	if (is.na(opt$gds_chrom_id) | opt$gds_chrom_id == "") opt$gds_chrom_id <- "chromosome";
 	opt$gds_pos_id <- args["gds_pos_id"];
-	if (is.na(opt$gds_pos_id) | opt$gds_pos_id == "") opt$gds_chrom_id <- "position";
+	if (is.na(opt$gds_pos_id) | opt$gds_pos_id == "") opt$gds_pos_id <- "position";
 	opt$gds_allele_id <- args["gds_allele_id"];
-	if (is.na(opt$gds_allele_id) | opt$gds_allele_id == "") opt$gds_chrom_id <- "allele";
+	if (is.na(opt$gds_allele_id) | opt$gds_allele_id == "") opt$gds_allele_id <- "allele";
 
 	# Pedigree related options
 	opt$pedigree_file <- args["pedigree_file"];
@@ -528,11 +528,11 @@ result_all <- c();
 computeMAF <- function(mdata, chr=opt$chromosome) {
 	N <- NROW(mdata);
 	if (length(chr) == 1) {
-		chr_x <- rep(chr == "X", N);
-		chr_y <- rep(chr == "Y", N);
+		chr_x <- rep(chr == "x", N);
+		chr_y <- rep(chr == "y", N);
 	} else {
-		chr_x <- chr == "X";
-		chr_y <- chr == "Y";
+		chr_x <- chr == "x";
+		chr_y <- chr == "y";
 	}
 	chr_auto <- !chr_x & !chr_y;
 
@@ -546,22 +546,22 @@ computeMAF <- function(mdata, chr=opt$chromosome) {
 		..count_m <- rowSums(mdata[chr_x, ..males, drop = FALSE], na.rm = TRUE);
 		..n_m <- rowSums(!is.na(mdata[chr_x, ..males, drop = FALSE]));
 		mac[chr_x] <- pmin(..count_f, 2*..n_f - ..count_f) + pmin(..count_m, ..n_m - ..count_m);
-		maf[chr_x] <- mac / (2*..n_f + ..n_m);
+		maf[chr_x] <- mac[chr_x] / (2*..n_f + ..n_m);
 		n[chr_x] <- ..n_f + ..n_m;
 		rm(..count_f, ..count_m, ..n_f, ..n_m);
 	}
 	if (sum(chr_y) > 0) {
 		..count <- rowSums(mdata[chr_y, ..males, drop = FALSE], na.rm = TRUE);
 		n[chr_y] <- rowSums(!is.na(mdata[chr_y, ..males, drop = FALSE]));
-		mac[chr_y] <- pmin(..count, n - ..count);
-		maf[chr_y] <- mac / n;
+		mac[chr_y] <- pmin(..count, n[chr_y] - ..count);
+		maf[chr_y] <- mac[chr_y] / n[chr_y];
 		rm(..count);
 	}
-	if (sum(chr_auto) > 0){
+	if (sum(chr_auto) > 0) {
 		..count <- rowSums(mdata[chr_auto, , drop = FALSE], na.rm = TRUE);
 		n[chr_auto] <- rowSums(!is.na(mdata[chr_auto, , drop = FALSE]));
-		mac[chr_auto] <- pmin(..count, 2*n - ..count);
-		maf[chr_auto] <- mac / (2 * n);
+		mac[chr_auto] <- pmin(..count, 2*n[chr_auto] - ..count);
+		maf[chr_auto] <- mac[chr_auto] / (2 * n[chr_auto]);
 		rm(..count);
 	}
 	return(data.frame(N=n, MAC=mac, MAF=maf));
@@ -592,13 +592,13 @@ if (is(mdata, "SeqVarGDSClass")) {
 			..pos <- seqGetData(..gds, opt$gds_pos_id);
 			..chr <- seqGetData(..gds, opt$gds_chrom_id);
 			..alleles <- gsub(",", ":", seqGetData(..gds, opt$gds_allele_id));
-			..var <- paste(..pos, ..chr, ..alleles, sep=":");
-			rm(..pos, ..chr, ..alleles);
+			..var <- paste(..chr, ..pos, ..alleles, sep=":");
+			rm(..pos, ..alleles);
 			..m_time <- system.time({
 				..metadata <- cbind(Marker = ..var, computeMAF(mdata, ..chr));
-				..b <- ..metadata$mac >= opt$mac_threshold;
+				..b <- ..metadata$MAC >= opt$mac_threshold;
 				if (!is.na(opt$maf_threshold)) {
-					..b <- b & (..metadata$maf >= opt$maf_threshold);
+					..b <- b & (..metadata$MAF >= opt$maf_threshold);
 				}
 				..sb <- sum(..b);
 				if (..sb < NROW(mdata)) {
@@ -623,7 +623,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 			#result_all <- rbind(result_all, cur_result);
 		}
 		if (opt$progress_bar) setTxtProgressBar(..pb, block_no);
-		cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
+		if (opt$debug) cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
 		cur_result;
 	}
 	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
