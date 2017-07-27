@@ -51,7 +51,7 @@
 
 default_code_path <- Sys.getenv("ASSOCTOOL_DIR");
 if (is.null(default_code_path) | default_code_path == "") default_code_path <- "/data/assoctool/";
-default_block_size <- 10000;
+default_block_size <- 2500;
 
 source(paste(default_code_path, "utils.R", sep=""));
 args <- processArgs(commandArgs(trailingOnly=TRUE));

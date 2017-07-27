@@ -22,7 +22,7 @@
       "help": "How many rows you wish to load at a time. The larger the number, the higher the burden of the computation. If the number is too small, it may be bogged down by the disk speed. Use your judgment. Leave default if in doubt. This is ignored if you set the 'Load all' to true or if the data is in .rds / .rda / .RData format.",
       "class": "int",
       "optional": true,
-      "default": 10000
+      "default": 2500
     },
     {
       "name": "pheno_file",
