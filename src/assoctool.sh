@@ -268,8 +268,10 @@ main() {
     fi
 
     if [ $debug == "true" ] ; then
-       echo "Running benchmark code... (sar)"
-       sar -u 60 > /data/benchmark.prof &
+       echo "Running CPU benchmark code... (sar)"
+       sar -u 60 > /data/cpu_benchmark.prof &
+       echo "Running RAM benchmark code... (vmstat)"
+       vmstat -Sm 60 /data/ram_benchmark.prof & 
     fi
     echo '#!/bin/bash' > /data/runme.sh
     echo 'export MKL_NUM_THREADS=1' >> /data/runme.sh
@@ -288,11 +290,16 @@ main() {
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /bin/bash /data/runme.sh
 
     if [ $debug == "true" ] ; then
-       echo "Benchmark results:"
+       echo "CPU benchmark results:"
        echo "=========================== BEGIN ==========================="
-       cat /data/benchmark.prof
+       cat /data/cpu_benchmark.prof
        echo "============================ END ============================"
        pkill sar
+       echo "RAM benchmark results:"
+       echo "=========================== BEGIN ==========================="
+       cat /data/ram_benchmark.prof
+       echo "============================ END ============================"
+       pkill vmstat
     fi
     results="/data/results"
     if [ -e $results ] ; then
