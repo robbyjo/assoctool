@@ -28,7 +28,7 @@
 # args holds the raw options passed into this program and will be NOT deleted once known options have been parsed.
 # This will allow custom programs to pass parameters through the command line.
 
-source("/home/dnanexus/utils.R");
+source(paste(default_code_path, "utils.R", sep=""));
 args <- processArgs(commandArgs(trailingOnly=TRUE));
 
 {
@@ -39,6 +39,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$qq_fmt <- args["output_format"];
 	opt$qq_param_list <- args["param_list"];
 	opt$qq_fmt_param_list <- args["format_param_list"];
+	opt$qq_p_threshold <- processFloatArg(args["qq_p_threshold"], "qq_p_threshold", log10(5e-8));
 
 	opt$recognized_formats <- c("png", "pdf", "tiff", "bmp", "jpeg");
 	if (is.na(opt$input_file)) stop("Input file is missing!");
@@ -53,6 +54,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	}
 }
 
+# TODO option for multiple page format
 opt$input_cols <- trim(unlist(strsplit(opt$input_cols, ",")));
 
 library(data.table);
@@ -82,12 +84,22 @@ if (endsWith(..fn, ".rds")) {
 	rm(list=..vv[..ii]); # We will not delete the other objects
 	rm(..vv, ..ii, ..lv);
 	if (class(mdata) != "data.frame") mdata <- data.frame(mdata, check.names=FALSE, stringsAsFactors=FALSE);
+} else if (endsWith(..fn, ".bz2")) {
+	cat("Loading", opt$input_file, "as bzipped text...\n");
+	mdata <- read.csv(bzfile(opt$input_file), check.names=FALSE, stringsAsFactors=FALSE);
+} else if (endsWith(..fn, ".gz")) {
+	cat("Loading", opt$input_file, "as gzipped text...\n");
+	mdata <- read.csv(gzfile(opt$input_file), check.names=FALSE, stringsAsFactors=FALSE);
+} else if (endsWith(..fn, ".xz")) {
+	cat("Loading", opt$input_file, "as xzipped text...\n");
+	mdata <- read.csv(xzfile(opt$input_file), check.names=FALSE, stringsAsFactors=FALSE);
+} else if (endsWith(..fn, ".zip")) {
+	cat("Loading", opt$input_file, "as zipped text...\n");
+	mdata <- read.csv(unz(opt$input_file), check.names=FALSE, stringsAsFactors=FALSE);
 } else {
 	# Assume text
 	cat("Loading", opt$input_file, "as text...\n");
 	mdata <- data.frame(fread(opt$input_file), check.names=FALSE, stringsAsFactors=FALSE);
-	rownames(mdata) <- mdata[,1];
-	mdata <- mdata[, -1];
 }
 rm(..fn);
 cat("Input file has been loaded. Dimension:", dim(mdata), "\n");
@@ -98,7 +110,7 @@ if (!all(opt$input_cols %in% colnames(mdata))) {
 
 ## Q-Q plot
 
-qqPlot <- function(pvector, p0 = -8, col=c("#A0A0A0", "#000000"), ...) {
+qqPlot <- function(pvector, p0 = opt$qq_p_threshold, col=c("#A0A0A0", "#000000"), ...) {
 	p_order <- order(pvector,decreasing=FALSE);
 	if (any(pvector == 0)) {
 		pvector[pvector == 0] <- .Machine$double.xmin;
