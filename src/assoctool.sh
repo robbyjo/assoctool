@@ -24,14 +24,6 @@
 # dx-docker add-to-applet robbyjo/r-mkl-bioconductor:3.4.1 assoctool
 
 main() {
-    if [ $debug -gt 0 ] ; then
-       echo "Setting up profiling"
-       DEBIAN_FRONTEND=noninteractive apt-get update
-       DEBIAN_FRONTEND=noninteractive apt-get -y install sysstat
-       sed -e "s/false/true/g" /etc/default/sysstat > /etc/default/sysstat.bak
-       mv /etc/default/sysstat.bak /etc/default/sysstat
-       /etc/init.d/sysstat start
-    fi
     echo "Value of omics_file: '$omics_file'"
     echo "Value of output_file: '$output_file'"
     echo "Value of save_as_binary: '$save_as_binary'"
@@ -81,8 +73,8 @@ main() {
     echo "Value of pedigree_mother: '$pedigree_mother'"
     echo "Value of pedigree_sex: '$pedigree_sex'"
 
-    #echo "Value of from: '$from'"
-    #echo "Value of to: '$to'"
+    echo "Value of from: '$from'"
+    echo "Value of to: '$to'"
     echo "Value of num_cores: '$num_cores'"
     echo "Value of block_size: '$block_size'"
     echo "Value of debug: '$debug'"
@@ -250,6 +242,8 @@ main() {
 
     if [[ "$debug" != "" ]] ; then
         PARMS+=(--debug="$debug")
+    else
+        debug=0
     fi
 
     if [[ "$progress_bar" != "" ]] ; then
@@ -259,24 +253,24 @@ main() {
     echo "Waiting for all file transfers to complete..."
     wait
     sudo chmod o+rw /tmp
-    echo "===== Listing /data/ ====="
-    ls -R /data/
-    echo "===== Listing /data/ ends ====="
-    echo "Working directory is:"
-    pwd
-    echo "Checking phenotype file" 
-    if [ -e "/data/${pheno_file_name}" ]
-    then
-       head -n1 /data/${pheno_file_name}
-    else
-       echo "The phenofile is not ready"
+    if [ $debug -gt 1 ] ; then
+        echo "===== Listing /data/ ====="
+        ls -R /data/
+        echo "===== Listing /data/ ends ====="
+        echo "Working directory is:"
+        pwd
+        echo "Checking phenotype file" 
+        if [ -e "/data/${pheno_file_name}" ]
+        then
+            head -n1 /data/${pheno_file_name}
+        else
+            echo "The phenofile is not ready"
+        fi
     fi
 
     if [ $debug -gt 0 ] ; then
-       echo "Running CPU benchmark code... (sar)"
-       sar -u 60 > /data/cpu_benchmark.prof &
-       echo "Running RAM benchmark code... (vmstat)"
-       vmstat -Sm 60 > /data/ram_benchmark.prof & 
+        echo "Running benchmark code... (vmstat)"
+        vmstat -Sm 60 > /data/benchmark.prof & 
     fi
     echo '#!/bin/bash' > /data/runme.sh
     echo 'export MKL_NUM_THREADS=1' >> /data/runme.sh
@@ -288,23 +282,22 @@ main() {
     echo 'echo "Finished running code"' >> /data/runme.sh
     chmod 700 /data/runme.sh
 
-    echo "============================ Script begin ============================ "
-    cat /data/runme.sh
-    echo "============================= Script end ============================= "
+    if [ $debug -gt 1 ] ; then
+       echo "============================ Script begin ============================ "
+       cat /data/runme.sh
+       echo "============================= Script end ============================= "
+    fi
 
     dx-docker run -v /data/:/data/ robbyjo/r-mkl-bioconductor:3.4.1 /bin/bash /data/runme.sh
 
     if [ $debug -gt 0 ] ; then
-       echo "CPU benchmark results:"
+       echo "Benchmark results:"
        echo "=========================== BEGIN ==========================="
-       cat /data/cpu_benchmark.prof
-       echo "============================ END ============================"
-       pkill sar
-       echo "RAM benchmark results:"
-       echo "=========================== BEGIN ==========================="
-       cat /data/ram_benchmark.prof
+       cat /data/benchmark.prof
        echo "============================ END ============================"
        pkill vmstat
+       # Disk benchmark
+       vmstat -Sm -d
     fi
     results="/data/results"
     if [ -e $results ] ; then
