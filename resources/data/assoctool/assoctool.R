@@ -694,7 +694,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 		}
 		if (opt$analysis_type == "gwas") {
 			..m_time <- system.time({
-				..metadata <- cbind(Marker = rownames(mdata), computeMAF(mdata, ..chr));
+				..metadata <- cbind(Marker = rownames(mdata), computeMAF(mdata));
 				..b <- ..metadata$MAC >= opt$mac_threshold;
 				if (!is.na(opt$maf_threshold)) {
 					..b <- b & (..metadata$MAF >= opt$maf_threshold);
