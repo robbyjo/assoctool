@@ -503,7 +503,7 @@ param_cmd <- "param_list <- ifelse(is.na(opt$fn_param_list), list(), paramToList
 suppressMessages(library(parallel));
 
 opt$max_cores <- detectCores(logical=TRUE);
-if (is.na(opt$num_cores) | opt$num_cores > opt$max_cores) opt$num_cores <- opt$max_cores;
+if (is.na(opt$num_cores) | opt$num_cores > opt$max_cores | opt$num_cores < 1) opt$num_cores <- opt$max_cores;
 cat("The number of cores will be used:", opt$num_cores, "\n");
 options(mc.cores = opt$num_cores);
 
