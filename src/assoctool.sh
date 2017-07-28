@@ -271,7 +271,7 @@ main() {
        echo "Running CPU benchmark code... (sar)"
        sar -u 60 > /data/cpu_benchmark.prof &
        echo "Running RAM benchmark code... (vmstat)"
-       vmstat -Sm 60 /data/ram_benchmark.prof & 
+       vmstat -Sm 60 > /data/ram_benchmark.prof & 
     fi
     echo '#!/bin/bash' > /data/runme.sh
     echo 'export MKL_NUM_THREADS=1' >> /data/runme.sh
