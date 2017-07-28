@@ -641,10 +641,34 @@ if (is(mdata, "SeqVarGDSClass")) {
 	if (is.na(opt$to)) opt$to <- NROW(mdata);
 	if (is.na(opt$from)) opt$from <- 1;
 	mdata <- mdata[(rownames(mdata) %in% ..included_marker_ids) & ((1:NROW) %in% (opt$from:opt$to)), ..ids, drop=FALSE];
+	if (opt$analysis_type == "gwas") {
+		..metadata <- cbind(Marker=rownames(mdata), computeMAF(mdata, ..chr));
+		..b <- ..metadata$MAC >= opt$mac_threshold;
+		if (!is.na(opt$maf_threshold)) {
+			..b <- b & (..metadata$MAF >= opt$maf_threshold);
+		}
+		..sb <- sum(..b);
+		if (..sb < NROW(mdata)) {
+			mdata <- mdata[..b, , drop=FALSE];
+			..metadata <- ..metadata[..b, ];
+		}
+		if (opt$impute_genotype) {
+			..miss_idx <- which(is.na(mdata));
+			..f_idx <- ((..miss_idx - 1) %% NROW(mdata)) + 1;
+			# For column-wise idx: ..f_idx <- ((..miss_idx - 1) %/% NROW(mdata)) + 1;
+			mdata[..miss_idx] <- 2*..metadata$MAF[..f_idx];
+		}
+	}
 	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
-	result_all <- data.table(Marker=rownames(mdata), result_all);
+	if (opt$analysis_type == "gwas") {
+		result_all <- data.table(..metadata, result_all);
+	} else {
+		result_all <- data.table(Marker=rownames(mdata), result_all);
+	}
 	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
 	# TODO: Partial loading for text
+} else {
+	stop(paste("Unknown main data type:", class(mdata)));
 }
 
 # Dispose progress bar
