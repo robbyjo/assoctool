@@ -42,7 +42,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	opt$qq_param_list <- args["param_list"];
 	opt$qq_fmt_param_list <- args["format_param_list"];
 	opt$qq_p_threshold <- processFloatArg(args["qq_p_threshold"], "qq_p_threshold", log10(5e-8));
-
+	opt$qq_custom_code <- args["qq_custom_code"];
+	
 	opt$recognized_formats <- c("png", "pdf", "tiff", "bmp", "jpeg");
 	if (is.na(opt$input_file)) stop("Input file is missing!");
 	if (is.na(opt$input_cols)) stop("Input column specification is missing!");
@@ -111,30 +112,34 @@ if (!all(opt$input_cols %in% colnames(mdata))) {
 }
 
 ## Q-Q plot
+if (!is.na(opt$qq_custom_code)) {
+	cat ("Loading custom Q-Q plot code...", opt$qq_custom_code, "\n");
+	source(opt$qq_custom_code);
+} else {
+	qqPlot <- function(pvector, p0 = opt$qq_p_threshold, col=c("#A0A0A0", "#000000"), ...) {
+		p_order <- order(pvector,decreasing=FALSE);
+		if (any(pvector == 0)) {
+			pvector[pvector == 0] <- .Machine$double.xmin;
+		}
+		o <- -log10(pvector[p_order]);
+		n <- length(o);
+		e <- -log10( 1:n/n );
+		b <- o >= p0;
 
-qqPlot <- function(pvector, p0 = opt$qq_p_threshold, col=c("#A0A0A0", "#000000"), ...) {
-	p_order <- order(pvector,decreasing=FALSE);
-	if (any(pvector == 0)) {
-		pvector[pvector == 0] <- .Machine$double.xmin;
-	}
-	o <- -log10(pvector[p_order]);
-	n <- length(o);
-	e <- -log10( 1:n/n );
-	b <- o >= p0;
-	
-	# Make sure that the dots are not too crowded
-	ob <- duplicated(round(o, digits=2)) & !b;
-	o <- o[!ob];
-	e <- e[!ob];
-	b <- b[!ob];
-	
-	plot(e[!b],o[!b],pch=19,cex=0.7, ...,
+		# Make sure that the dots are not too crowded
+		ob <- duplicated(round(o, digits=2)) & !b;
+		o <- o[!ob];
+		e <- e[!ob];
+		b <- b[!ob];
+
+		plot(e[!b],o[!b],pch=19,cex=0.7, ...,
 			xlab=expression(Expected~~-log[10](italic(p))),
 			ylab=expression(Observed~~-log[10](italic(p))),
 			xlim=c(0,e[1]), ylim=c(0,o[1]),col=col[1]);
-	points(e[b],o[b],pch=19,cex=0.7,col=col[2]);
-	abline(a=0,b=1,col=rgb(1,0.65,0),lty=1);
-	#abline(lm(o~e), col=rgb(0.5,0,0),lty=2);
+		points(e[b],o[b],pch=19,cex=0.7,col=col[2]);
+		abline(a=0,b=1,col=rgb(1,0.65,0),lty=1);
+		#abline(lm(o~e), col=rgb(0.5,0,0),lty=2);
+	}	
 }
 
 for (colname in opt$input_cols) {
