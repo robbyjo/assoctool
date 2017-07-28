@@ -65,6 +65,8 @@ main() {
     echo "Value of mac_thershold: '$mac_thershold'"
     echo "Value of chromosome: '$chromosome'"
     echo "Value of sex: '$sex'"
+    echo "Value of impute_genotype: '$impute_genotype'"
+
     echo "Value of gds_var_id: '$gds_var_id'"
     echo "Value of gds_sample_id: '$gds_sample_id'"
     echo "Value of gds_chrom_id: '$gds_chrom_id'"
@@ -197,6 +199,9 @@ main() {
     fi
     if [[ "$sex" != "" ]] ; then
         PARMS+=(--sex="$sex")
+    fi
+    if [[ "$impute_genotype" != "" ]] ; then
+        PARMS+=(--impute_genotype="$impute_genotype")
     fi
 
     if [[ "$pedigree_file" != "" ]] ; then

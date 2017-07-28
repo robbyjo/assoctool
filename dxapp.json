@@ -225,6 +225,14 @@
       "optional": true
     },
     {
+      "name": "impute_genotype",
+	  "label": "Impute Genotype",
+      "help": "Setting this true will let all missing genotypes be imputed. Only applicable for GWAS. The default is false. HOWEVER, for some methods, such as BLOCK_LM, impute genotype is overridden to TRUE.",
+      "class": "boolean",
+      "optional": true,
+      "default": false
+    },
+    {
       "name": "pedigree_file",
       "label": "Pedigree file",
       "help": "Pedigree file for pedigree-based analysis. Will be stored as 'ped'. If you put in a .txt or .csv, the assumption is the pedigree is to be constructed (either through kinship or pedigreemm). In that case, you MUST fill in the pedigree ID, father and mother IDs. For .rds, .rda, or .RData formats, the assumption will always be a matrix (sparse/dense). Note: assoctool will NOT filter the pedigree matrix (not for now at least).",

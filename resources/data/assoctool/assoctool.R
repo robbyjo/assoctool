@@ -100,7 +100,8 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	if (!(opt$chromosome %in% c("x", "y", "mt"))) opt$chromosome <- "autosome";
 	opt$sex <- args["sex"];
 	if (is.na(opt$sex) | opt$sex == "") opt$sex <- "sex";
-
+	opt$impute_genotype <- processBooleanArg(args["impute_genotype"], "impute_genotype", FALSE);
+	
 	# GDS related options
 	opt$gds_var_id <- args["gds_var_id"];
 	if (is.na(opt$gds_var_id) | opt$gds_var_id == "") opt$gds_var_id <- "variant.id";
@@ -609,6 +610,12 @@ if (is(mdata, "SeqVarGDSClass")) {
 					..metadata <- ..metadata[..b, ];
 				}
 			});
+			if (opt$impute_genotype) {
+				..miss_idx <- which(is.na(mdata));
+				..f_idx <- ((..miss_idx - 1) %% NROW(mdata)) + 1;
+				# For column-wise idx: ..f_idx <- ((..miss_idx - 1) %/% NROW(mdata)) + 1;
+				mdata[..miss_idx] <- 2*..metadata$MAF[..f_idx];
+			}
 			if (opt$debug > 1) {
 				cat("Block #", block_no, "- MAF filtering time:\n", ..m_time, "\n");
 				cat("Block #", block_no, "- dim(mdata) After MAF filter:\n", dim(mdata), "\n");
