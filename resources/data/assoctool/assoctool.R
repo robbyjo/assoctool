@@ -568,6 +568,11 @@ computeMAF <- function(mdata, chr=opt$chromosome) {
 	return(data.frame(N=n, MAC=mac, MAF=maf));
 }
 
+if (opt$analysis_type == "gwas") {
+	..males <- pdata[, opt$sex] == "M";
+	..females <- !..males;
+}
+
 if (is(mdata, "SeqVarGDSClass")) {
 	..gds <- mdata;
 	..num_markers <- length(seqGetData(..gds, opt$gds_var_id));
@@ -578,8 +583,6 @@ if (is(mdata, "SeqVarGDSClass")) {
 	..block_start <- ((1:..num_blocks) - 1) * opt$block_size + opt$from;
 	..block_end   <- ..block_start + opt$block_size - 1;
 	..block_end[..num_blocks] <- opt$to;
-	..males <- pdata[, opt$sex] == "M";
-	..females <- !..males;
 	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
 
 	doOneBlock <- function(block_no) {
@@ -597,9 +600,101 @@ if (is(mdata, "SeqVarGDSClass")) {
 			..chr <- seqGetData(..gds, opt$gds_chrom_id);
 			..alleles <- gsub(",", ":", seqGetData(..gds, opt$gds_allele_id));
 			..var <- paste(..chr, ..pos, ..alleles, sep=":");
-			rm(..pos, ..alleles);
 			..m_time <- system.time({
 				..metadata <- cbind(Marker = ..var, computeMAF(mdata, ..chr));
+				..b <- ..metadata$MAC >= opt$mac_threshold;
+				if (!is.na(opt$maf_threshold)) {
+					..b <- b & (..metadata$MAF >= opt$maf_threshold);
+				}
+				..sb <- sum(..b);
+				if (..sb < NROW(mdata)) {
+					mdata <- mdata[..b, , drop=FALSE];
+					..metadata <- ..metadata[..b, ];
+				}
+			});
+			rm(..chr, ..pos, ..alleles, ..var);
+			if (opt$impute_genotype) {
+				..miss_idx <- which(is.na(mdata));
+				..f_idx <- ((..miss_idx - 1) %% NROW(mdata)) + 1;
+				# For column-wise idx: ..f_idx <- ((..miss_idx - 1) %/% NROW(mdata)) + 1;
+				mdata[..miss_idx] <- 2*..metadata$MAF[..f_idx];
+			}
+			if (opt$debug > 1) {
+				cat("Block #", block_no, "- MAF filtering time:\n", ..m_time, "\n");
+				cat("Block #", block_no, "- dim(mdata) After MAF filter:\n", dim(mdata), "\n");
+			}
+		}
+		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
+		if (NROW(mdata) > 0) {
+			..a_time <- system.time({
+				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata)); });
+			if (opt$debug > 1) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
+			if (opt$analysis_type == "gwas") {
+				cur_result <- cbind(..metadata, cur_result);
+			}
+			cur_result <- data.table(cur_result);
+			#result_all <- rbind(result_all, cur_result);
+		}
+		if (opt$progress_bar) setTxtProgressBar(..pb, block_no);
+		if (opt$debug > 1) cat("Block #", block_no, "- dim(cur_result):\n", dim(cur_result), "\n");
+		cur_result;
+	}
+	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
+} else if (is(mdata, "matrix")) {
+	if (is.na(opt$to)) opt$to <- NROW(mdata);
+	if (is.na(opt$from)) opt$from <- 1;
+	..filter <- (rownames(mdata) %in% ..included_marker_ids) & ((1:NROW(mdata)) %in% (opt$from:opt$to));
+	mdata <- mdata[..filter, ..ids, drop=FALSE];
+	if (opt$analysis_type == "gwas") {
+		..metadata <- cbind(Marker=rownames(mdata), computeMAF(mdata, ..chr));
+		..b <- ..metadata$MAC >= opt$mac_threshold;
+		if (!is.na(opt$maf_threshold)) {
+			..b <- b & (..metadata$MAF >= opt$maf_threshold);
+		}
+		..sb <- sum(..b);
+		if (..sb < NROW(mdata)) {
+			mdata <- mdata[..b, , drop=FALSE];
+			..metadata <- ..metadata[..b, ];
+		}
+		if (opt$impute_genotype) {
+			..miss_idx <- which(is.na(mdata));
+			..f_idx <- ((..miss_idx - 1) %% NROW(mdata)) + 1;
+			# For column-wise idx: ..f_idx <- ((..miss_idx - 1) %/% NROW(mdata)) + 1;
+			mdata[..miss_idx] <- 2*..metadata$MAF[..f_idx];
+		}
+	}
+	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
+	if (opt$analysis_type == "gwas") {
+		result_all <- data.table(..metadata, result_all);
+	} else {
+		result_all <- data.table(Marker=rownames(mdata), result_all);
+	}
+	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
+	# TODO: Partial loading for text
+} else if(is(mdata, "filematrix")) { # In case of file matrix
+	..fm <- mdata;
+	..num_markers <- NROW(mdata);
+	if (is.na(opt$to)) opt$to <- ..num_markers;
+	if (is.na(opt$from)) opt$from <- 1;
+	..num_markers <- opt$to - opt$from + 1;
+	..num_blocks <- ceiling(..num_markers / opt$block_size);
+	..block_start <- ((1:..num_blocks) - 1) * opt$block_size + opt$from;
+	..block_end   <- ..block_start + opt$block_size - 1;
+	..block_end[..num_blocks] <- opt$to;
+	if (opt$progress_bar) ..pb <- txtProgressBar(max=..num_blocks, style=3);
+
+	doOneBlock <- function(block_no) {
+		if (opt$debug > 0) cat("Block #", block_no, ":", ..block_start[block_no], "to", ..block_end[block_no], "\n");
+		..l_time <- system.time({ mdata <- ..fm[..block_start[block_no]:..block_end[block_no], ..ids]; });
+		..i_time <- system.time({ mdata <- mdata[rownames(mdata) %in% ..included_marker_ids, ..ids, drop=FALSE]; });
+		if (opt$debug > 1) {
+			cat("Block #", block_no, "- Loading time:\n", ..l_time, "\n");
+			cat("Block #", block_no, "- Reindexing time:\n", ..i_time, "\n");
+			cat("Block #", block_no, "- dim(mdata) Before MAF filter:\n", dim(mdata), "\n");
+		}
+		if (opt$analysis_type == "gwas") {
+			..m_time <- system.time({
+				..metadata <- cbind(Marker = rownames(mdata), computeMAF(mdata, ..chr));
 				..b <- ..metadata$MAC >= opt$mac_threshold;
 				if (!is.na(opt$maf_threshold)) {
 					..b <- b & (..metadata$MAF >= opt$maf_threshold);
@@ -637,36 +732,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 		cur_result;
 	}
 	result_all <- rbindlist(mclapply(1:..num_blocks, doOneBlock, mc.cores=opt$num_cores, mc.preschedule=FALSE));
-} else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
-	if (is.na(opt$to)) opt$to <- NROW(mdata);
-	if (is.na(opt$from)) opt$from <- 1;
-	mdata <- mdata[(rownames(mdata) %in% ..included_marker_ids) & ((1:NROW(mdata)) %in% (opt$from:opt$to)), ..ids, drop=FALSE];
-	if (opt$analysis_type == "gwas") {
-		..metadata <- cbind(Marker=rownames(mdata), computeMAF(mdata, ..chr));
-		..b <- ..metadata$MAC >= opt$mac_threshold;
-		if (!is.na(opt$maf_threshold)) {
-			..b <- b & (..metadata$MAF >= opt$maf_threshold);
-		}
-		..sb <- sum(..b);
-		if (..sb < NROW(mdata)) {
-			mdata <- mdata[..b, , drop=FALSE];
-			..metadata <- ..metadata[..b, ];
-		}
-		if (opt$impute_genotype) {
-			..miss_idx <- which(is.na(mdata));
-			..f_idx <- ((..miss_idx - 1) %% NROW(mdata)) + 1;
-			# For column-wise idx: ..f_idx <- ((..miss_idx - 1) %/% NROW(mdata)) + 1;
-			mdata[..miss_idx] <- 2*..metadata$MAF[..f_idx];
-		}
-	}
-	result_all <- do.call(rbind, mclapply(1:NROW(mdata), doOne, mdata, mc.cores=opt$num_cores, mc.preschedule=FALSE));
-	if (opt$analysis_type == "gwas") {
-		result_all <- data.table(..metadata, result_all);
-	} else {
-		result_all <- data.table(Marker=rownames(mdata), result_all);
-	}
-	#if (is(..fm, "filematrix")) closeAndDeleteFiles(..fm);
-	# TODO: Partial loading for text
+
 } else {
 	stop(paste("Unknown main data type:", class(mdata)));
 }
