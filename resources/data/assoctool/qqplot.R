@@ -28,6 +28,8 @@
 # args holds the raw options passed into this program and will be NOT deleted once known options have been parsed.
 # This will allow custom programs to pass parameters through the command line.
 
+default_code_path <- Sys.getenv("ASSOCTOOL_DIR");
+if (is.null(default_code_path) | default_code_path == "") default_code_path <- "/data/assoctool/";
 source(paste(default_code_path, "utils.R", sep=""));
 args <- processArgs(commandArgs(trailingOnly=TRUE));
 
