@@ -199,7 +199,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 				# It will be reloaded globally below
 				source(fn, local=TRUE);
 				# Make sure function doOne is defined
-				if (!isDefined(doOne)) stop("Function doOne is not defined!");
+				if (!isDefined(doOne) & !isDefined(doBlock)) stop("Function doOne or doBlock is not defined!");
 			}
 			checkAnalysisCode(opt$analysis_code);
 		}
@@ -532,6 +532,8 @@ if (opt$method == "custom") {
 } else {
 	source(paste(default_code_path, opt$method, ".R", sep=""));
 }
+# If doBlock is defined, then do the analysis by blocks.
+opt$analyze_by_block <- isDefined(doBlock);
 
 result_all <- c();
 ..ids <- pdata[,opt$id_col];
@@ -637,7 +639,12 @@ if (is(mdata, "SeqVarGDSClass")) {
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
-				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata)); });
+				if (opt$analyze_by_block) {
+					cur_result <- doBlock(mdata);
+				} else {
+					cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata));
+				}
+			});
 			if (opt$debug > 1) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(..metadata, cur_result);
@@ -729,7 +736,12 @@ if (is(mdata, "SeqVarGDSClass")) {
 		# If some SNPs still survive filtering, do the analysis. If not, skip the block altogether.
 		if (NROW(mdata) > 0) {
 			..a_time <- system.time({
-				cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata)); });
+				if (opt$analyze_by_block) {
+					cur_result <- doBlock(mdata);
+				} else {
+					cur_result <- do.call(rbind, lapply(1:NROW(mdata), doOne, mdata));
+				}
+			});
 			if (opt$debug > 1) cat("Block #", block_no, "- Analysis time:\n", ..a_time, "\n");
 			if (opt$analysis_type == "gwas") {
 				cur_result <- cbind(..metadata, cur_result);
