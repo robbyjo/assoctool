@@ -233,8 +233,9 @@ if (!opt$skip_loading_phenotype) {
 	# Assumption: rows = num samples, cols = num phenotypes
 	pdata <- data.frame(fread(opt$pheno_file), check.names=FALSE, stringsAsFactors=FALSE);
 	cat("Phenotype file has been loaded. Dimension:", dim(pdata), "\n");
-	# Double check the IDs in the phenotype data and the methylation data!
+	# Double check the IDs in the phenotype data and the omics data!
 	if (!(opt$id_col %in% colnames(pdata))) stop(paste(opt$id_col, "is not in phenotype file!"));
+	rownames(pdata) <- pdata[, opt$id_col];
 	if (!is.na(opt$pheno_filter_criteria)) {
 		pdata <- data.table(pdata);
 		pdata <- pdata[eval(parse(text=opt$pheno_filter_criteria))]
@@ -268,6 +269,15 @@ if (!opt$skip_loading_phenotype) {
 			stop(paste("This is a GWAS analysis and the column '", opt$sex, "' to indicate sex is not in the phenotype file!", sep=""))
 		}
 	}
+	# Try to remove missing phenotype data.
+	pdata2 <- pdata;
+	pdata2[, opt$omics_var_name] <- rnorm(NROW(pdata2));
+	pdata2 <- model.matrix(opt$fm, data=pdata2);
+	if (NROW(pdata2) < NROW(pdata)) {
+		pdata <- pdata[rownames(pdata2), ];
+		cat("Due to missing data in covariates specified in the formula, phenotype file is filtered. Only", NROW(pdata), "observations remain.\n");
+	}
+	rm(pdata2);
 }
 
 if (!opt$skip_loading_pedigree) {
