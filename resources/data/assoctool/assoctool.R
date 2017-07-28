@@ -640,7 +640,7 @@ if (is(mdata, "SeqVarGDSClass")) {
 } else if (is(mdata, "filematrix") | is(mdata, "matrix")) {
 	if (is.na(opt$to)) opt$to <- NROW(mdata);
 	if (is.na(opt$from)) opt$from <- 1;
-	mdata <- mdata[(rownames(mdata) %in% ..included_marker_ids) & ((1:NROW) %in% (opt$from:opt$to)), ..ids, drop=FALSE];
+	mdata <- mdata[(rownames(mdata) %in% ..included_marker_ids) & ((1:NROW(mdata)) %in% (opt$from:opt$to)), ..ids, drop=FALSE];
 	if (opt$analysis_type == "gwas") {
 		..metadata <- cbind(Marker=rownames(mdata), computeMAF(mdata, ..chr));
 		..b <- ..metadata$MAC >= opt$mac_threshold;
