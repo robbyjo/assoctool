@@ -203,7 +203,7 @@
     {
       "name": "gds_chrom_id",
       "label": "GDS chromosome attribute",
-      "help": "The name of chromosome field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "help": "The name of chromosome field in GDS file. Defaults to chromosome. Only applicable for GDS format.",
       "class": "string",
       "default": "chromosome",
       "optional": true
@@ -211,7 +211,7 @@
     {
       "name": "gds_pos_id",
       "label": "GDS position attribute",
-      "help": "The name of position field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "help": "The name of position field in GDS file. Defaults to position. Only applicable for GDS format.",
       "class": "string",
       "default": "position",
       "optional": true
@@ -219,7 +219,7 @@
     {
       "name": "gds_allele_id",
       "label": "GDS allele attribute",
-      "help": "The name of allele field in GDS file. Defaults to sample.id. Only applicable for GDS format.",
+      "help": "The name of allele field in GDS file. Defaults to allele. Only applicable for GDS format.",
       "class": "string",
       "default": "allele",
       "optional": true
