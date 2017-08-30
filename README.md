@@ -214,7 +214,7 @@ Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methy
   </tr>
   <tr>
     <td><tt>pedigree_id_col</tt> string</td>
-    <td>If for some reason the pedigree file is specified using a different set of ID numbers than the one specified in the phenotypic data (a common situation in clinical setting), then you need to provide a linker ID column name in here. In case of Framingham Heart Study cohort, the pedigree is often provided using SabreID, while the genotype data is available in ShareID. The pedigree file contains the pedigree_id, pedigree_father, and pedigree_mother in SabreID, then we add another column ShareID to link to the phenotype file. In this case, we fill in ShareID here.</td>
+    <td>If for some reason the pedigree file is specified using a different set of ID numbers than the one specified in the phenotypic data (a common situation in clinical setting), then you need to provide a linker ID column name in here. In case of Framingham Heart Study cohort, the pedigree is often provided using SabreID, while the genotype data is available in ShareID. The pedigree file contains the <tt>pedigree_id</tt>, <tt>pedigree_father</tt>, and <tt>pedigree_mother</tt> in SabreID, then we add another column ShareID to link to the phenotype file. In this case, we fill in ShareID here.</td>
   </tr>
   <tr>
     <td>ADVANCED (For some analysis / models)</td>
@@ -254,7 +254,7 @@ If <tt>result_var_name</tt> is left blank, then assoctool will output the statis
   </tr>
   <tr>
     <td><tt>factors_list</tt> string</td>
-    <td>A comma separated list of column names in phenotype file that should be treated as factors, rather than integers. By default, phenotype file will be loaded as data.frame. R usually guesses the data type for each column. If a column, say batch number, is entirely integer, then R will treat it as numeric. In regression equation, treating batch as numeric variable will be wrong. To override that behavior, you specify which columns should be treated as factors. In terms of R code, basically assoctool will iterate the list and apply as.factor function to each column.</td>
+    <td>A comma separated list of column names in phenotype file that should be treated as factors, rather than integers. By default, phenotype file will be loaded as data.frame. R usually guesses the data type for each column. If a column, say batch number, is entirely integer, then R will treat it as numeric. In regression equation, treating batch as numeric variable will be wrong. To override that behavior, you specify which columns should be treated as factors. In terms of R code, basically assoctool will iterate the list and apply <tt>as.factor</tt> function to each column.</td>
   </tr>
   <tr>
     <td>ADVANCED (For custom GDS format)</td>
@@ -286,22 +286,23 @@ If <tt>result_var_name</tt> is left blank, then assoctool will output the statis
   </tr>
   <tr>
     <td><tt>analysis_code</tt> file</td>
-    <td>If you choose a CUSTOM analysis method, you will need to upload your own R code in here. This app expects the code to contain a function called doOne, with two parameters: i and mdata. The variable i indicates the index of the marker in mdata matrix. This function must return the statistics for marker i. For an example, you can view assoctool's lm.R file.</td>
+    <td>If you choose a CUSTOM analysis method, you will need to upload your own R code in here. This app expects the code to contain a function called <tt>doOne</tt>, with two parameters: <tt>i</tt> and <tt>mdata</tt>. The variable <tt>i</tt> indicates the index of the marker in <tt>mdata</tt> matrix. This function must return the statistics for marker <tt>i</tt>. For an example, you can view assoctool's <tt>lm.R</tt> file.</td>
   </tr>
   <tr>
     <td>preload_code file</td>
-    <td>If you have a custom data format or require a custom library, you can put it here. This code will be loaded right BEFORE the any of the data (main, phenotype, pedigree, annotation) are loaded and prepared. If you do choose to load the data yourself, here is the convention for assoctool:
-1. Omics data is loaded into mdata.
-2. Phenotype data is loaded into pdata, assumed a data frame.
-3. Annotation data is loaded into annot_data, assumed a data frame.
-4. Pedigree data is loaded into ped object.
+    <td>If you have a custom data format or require a custom library, you can put it here. This code will be loaded right BEFORE the any of the data (main, phenotype, pedigree, annotation) are loaded and prepared. If you do choose to load the data yourself, here is the convention for assoctool:<ol>
+<li>Omics data is loaded into mdata.</li>
+<li>Phenotype data is loaded into pdata, assumed a data frame.</li>
+<li>Annotation data is loaded into annot_data, assumed a data frame.</li>
+<li>Pedigree data is loaded into ped object.</li>
+</ol>
 Variables mdata and ped can be of any object AS LONG AS the analysis code understands them. Assoctool's default for mdata is matrix object, and ped can be either matrix or kinship/pedigreemm object.
 
-If you custom-load the data, you can then skip assoctool's default loading data routine by setting appropriate flag:
-1. <tt>opt$skip_loading_omics</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading omics file.
-2. <tt>opt$skip_loading_phenotype</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading phenotype file.
-3. <tt>opt$skip_loading_pedigree</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading pedigree file.
-4. <tt>opt$skip_loading_annotation</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading annotation file.</td>
+If you custom-load the data, you can then skip assoctool's default loading data routine by setting appropriate flag:<ol>
+<li><tt>opt$skip_loading_omics</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading omics file.</li>
+<li><tt>opt$skip_loading_phenotype</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading phenotype file.</li>
+<li><tt>opt$skip_loading_pedigree</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading pedigree file.</li>
+<li><tt>opt$skip_loading_annotation</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading annotation file.</li></ol></td>
   </tr>
   <tr>
     <td><tt>prologue_code</tt> file</td>
@@ -327,7 +328,7 @@ Another use of a prologue code is to define ID matching between omics data and p
   </tr>
   <tr>
     <td><tt>save_as_binary</tt> boolean</td>
-    <td>Save the result file as a binary file (RDS format) that you can later load in R using readRDS function. If you choose to save as binary, please disable the compression option above because R automatically compress the binary file.</td>
+    <td>Save the result file as a binary file (RDS format) that you can later load in R using <tt>readRDS</tt> function. If you choose to save as binary, please disable the compression option above because R automatically compress the binary file.</td>
   </tr>
   <tr>
     <td><tt>from</tt> integer; 
@@ -344,7 +345,7 @@ Another use of a prologue code is to define ID matching between omics data and p
   </tr>
   <tr>
     <td><tt>load_all</tt> boolean</td>
-    <td>If set to true, then assoctool will attempt to load the entirety of omics data to memory. Useful if the data file is relatively small. If this option is set to true, then block_size will be ignored.</td>
+    <td>If set to true, then assoctool will attempt to load the entirety of omics data to memory. Useful if the data file is relatively small. If this option is set to true, then <tt>block_size</tt> will be ignored.</td>
   </tr>
   <tr>
     <td><tt>debug</tt> integer</td>
