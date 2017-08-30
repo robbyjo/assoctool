@@ -97,10 +97,11 @@ This app runs single marker analysis in parallel.
   <tr>
     <td><tt>formula</tt>  string</td>
     <td>The formula for your analysis. By default the marker is called "y" (again, default can be changed in advanced options). Example:
-1. <tt>fnbmd ~ y + y*age + age + sex + height</tt>
-Here is a typical GWAS on femoral neck BMD. The SNP is called y here and this model can account for interaction with age.
-2. <tt>y ~ smoking + snp_chrna3 + age + sex + (1|batch)</tt>
-Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methylation levels. The batch term is specifically cast as random effect </td>
+    <ol>
+<li><tt>fnbmd ~ y + y*age + age + sex + height</tt><br>
+Here is a typical GWAS on femoral neck BMD. The SNP is called y here and this model can account for interaction with age.</li>
+<li><tt>y ~ smoking + snp_chrna3 + age + sex + (1|batch)</tt><br>
+Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methylation levels. The batch term is specifically cast as random effect</ol> </td>
   </tr>
   <tr>
     <td><tt>analysis_type</tt>  combo</td>
@@ -108,35 +109,36 @@ Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methy
   </tr>
   <tr>
     <td><tt>method</tt>  combo</td>
-    <td>Specify which method to use:
-1. LM for linear fixed effect model
-2. LMM for linear mixed effect model
-3. GLM for generalized linear fixed effect model (any family except negative binomial)
-4. GLMM for generalized linear mixed effect model (any family)
-5. NLS for non-linear fixed effect model
-6. NLMM for non-linear mixed effect model
-7. PEDIGREEMM for linear mixed effect model with pedigree structure using pedigreemm package
-8. KINSHIP1 for linear mixed effect model with pedigree structure using kinship1 package
-9. KINSHIP2 for linear mixed effect model with pedigree structure using kinship2 package
-10. LOGISTF for Firth's logistic regression
-11. RLM for robust linear model
-12. POLR for proportional odds logistic regression
-13. SURVIVAL for fixed effect survival model
-14. COXME for fixed or mixed effect survival model with or without pedigree
-15. GEE for generalized estimating equation
-16. GEEGLM for GEE using GEEpack
-17. ORDGEE for Ordinal GEE
-18. ZEROINFL for zero inflated models (Poisson / Negative Binomial)
-19. GLMNB for generalized linear fixed effect model on Negative Binomial family
-20. CENSREG for censored regression
-21. TRUNCREG for truncated regression
-22. BETAREG for regression on beta-distributed responses
-23. QUANTREG for regression on quantile-based responses
-24. MLOGIT for multinomial logit regression model
-25. RELOGIT for rare event logistic model
-26. GAMLSS for generalized additive model
-27. ZELIG for any model that you can specify using Zelig package
-28. CUSTOM for custom model. In this case, you MUST specify your analysis code at minimum. See advanced options</td>
+    <td>Specify which method to use:<ol>
+<li>LM for linear fixed effect model</li>
+<li>LMM for linear mixed effect model</li>
+<li>GLM for generalized linear fixed effect model (any family except negative binomial)</li>
+<li>GLMM for generalized linear mixed effect model (any family)</li>
+<li>NLS for non-linear fixed effect model</li>
+<li>NLMM for non-linear mixed effect model</li>
+<li>PEDIGREEMM for linear mixed effect model with pedigree structure using pedigreemm package</li>
+<li>KINSHIP1 for linear mixed effect model with pedigree structure using kinship1 package</li>
+<li>KINSHIP2 for linear mixed effect model with pedigree structure using kinship2 package</li>
+<li>LOGISTF for Firth's logistic regression</li>
+<li>RLM for robust linear model</li>
+<li>POLR for proportional odds logistic regression</li>
+<li>SURVIVAL for fixed effect survival model</li>
+<li>COXME for fixed or mixed effect survival model with or without pedigree</li>
+<li>GEE for generalized estimating equation</li>
+<li>GEEGLM for GEE using GEEpack</li>
+<li>ORDGEE for Ordinal GEE</li>
+<li>ZEROINFL for zero inflated models (Poisson / Negative Binomial)</li>
+<li>GLMNB for generalized linear fixed effect model on Negative Binomial family</li>
+<li>CENSREG for censored regression</li>
+<li>TRUNCREG for truncated regression</li>
+<li>BETAREG for regression on beta-distributed responses</li>
+<li>QUANTREG for regression on quantile-based responses</li>
+<li>MLOGIT for multinomial logit regression model</li>
+<li>RELOGIT for rare event logistic model</li>
+<li>GAMLSS for generalized additive model</li>
+<li>ZELIG for any model that you can specify using Zelig package</li>
+<li>CUSTOM for custom model. In this case, you MUST specify your analysis code at minimum. See advanced options</li>
+</ol></td>
   </tr>
   <tr>
     <td>Common (Optional)</td>
@@ -196,19 +198,19 @@ Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methy
   </tr>
   <tr>
     <td><tt>pedigree_id</tt> string</td>
-    <td>The name of column in pedigree file indicating participant ID. By default this is also called "</tt>ID</tt>". Applicable only for kinship / pedigreemm pedigree format. In kinship / pedigreemm format, pedigree file contains at least three columns, the individual ID, father ID, and mother ID, followed optionally by sex information.</td>
+    <td>The name of column in pedigree file indicating participant ID. By default this is also called "<tt>ID</tt>". Applicable only for kinship / pedigreemm pedigree format. In kinship / pedigreemm format, pedigree file contains at least three columns, the individual ID, father ID, and mother ID, followed optionally by sex information.</td>
   </tr>
   <tr>
     <td><tt>pedigree_father</tt> string</td>
-    <td>The name of column in pedigree file indicating the ID of the father of the subject. By default this is called "</tt>father</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td>The name of column in pedigree file indicating the ID of the father of the subject. By default this is called "<tt>father</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
     <td><tt>pedigree_mother</tt> string</td>
-    <td>The name of column in pedigree file indicating the ID of the mother of the subject. By default this is called "</tt>mother</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td>The name of column in pedigree file indicating the ID of the mother of the subject. By default this is called "<tt>mother</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
     <td><tt>pedigree_sex</tt> string</td>
-    <td>The name of column in pedigree file indicating the sex of the. By default this is called "</tt>sex</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td>The name of column in pedigree file indicating the sex of the. By default this is called "<tt>sex</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
     <td><tt>pedigree_id_col</tt> string</td>
@@ -220,30 +222,25 @@ Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methy
   </tr>
   <tr>
     <td><tt>fn_param_list</tt> string</td>
-    <td>A string containing a list of parameters that you wish to pass to the main analysis function. Example use of this would be to specify the family and link for GLM / GLMM type analysis. If you want to do weighted binomial GLM with logit link, you would put in the following text:
-
-</tt>family=binomial(link="logit"), weights=pdata[, "Weight"]</tt>
-
+    <td>A string containing a list of parameters that you wish to pass to the main analysis function. Example use of this would be to specify the family and link for GLM / GLMM type analysis. If you want to do weighted binomial GLM with logit link, you would put in the following text:<br>
+<tt>family=binomial(link="logit"), weights=pdata[, "Weight"]</tt><br>
 The pdata is the object in which phenotype data is stored. Certainly, for this example, you will need to make sure that the phenotype file contains a column called <tt>Weight</tt>.
 This string will be passed to the glm function (along with formula and the pdata).</td>
   </tr>
   <tr>
     <td><tt>tx_fun</tt> string</td>
-    <td>Transformation function, specified in R format. In EWAS / TWAS / Microbiome analysis, sometimes it is necessary to transform the marker due to non conformance to normality. One example of such transformation is the inverse normal transform (INT), which can be specified as:
-
-</tt>function(x) qqnorm(as.numeric(x), plot.it=FALSE)$x</tt>
-
-Or, Z-transform, which can be specified as:
-
-</tt>function(x) scale(as.numeric(x), center=TRUE, scale=TRUE)</tt></td>
+    <td>Transformation function, specified in R format. In EWAS / TWAS / Microbiome analysis, sometimes it is necessary to transform the marker due to non conformance to normality. One example of such transformation is the inverse normal transform (INT), which can be specified as:<br>
+<tt>function(x) qqnorm(as.numeric(x), plot.it=FALSE)$x</tt><br>
+Or, Z-transform, which can be specified as:<br>
+<tt>function(x) scale(as.numeric(x), center=TRUE, scale=TRUE)</tt></td>
   </tr>
   <tr>
     <td><tt>id_col</tt> string</td>
-    <td>The name of column in phenotype file indicating subject ID. By default this is called "</tt>ID</tt>". If you name it something else (e.g., SabreID), then you should specify it here</td>
+    <td>The name of column in phenotype file indicating subject ID. By default this is called "<tt>ID</tt>". If you name it something else (e.g., SabreID), then you should specify it here</td>
   </tr>
   <tr>
     <td><tt>omics_var_name</tt> string</td>
-    <td>By default, the omics will be called "</tt>y</tt>" in formula. If you wish to call the omics something else in the formula (for clarity), then you specify it here</td>
+    <td>By default, the omics will be called "<tt>y</tt>" in formula. If you wish to call the omics something else in the formula (for clarity), then you specify it here</td>
   </tr>
   <tr>
     <td><tt>compute_fdr</tt> boolean</td>
@@ -251,11 +248,9 @@ Or, Z-transform, which can be specified as:
   </tr>
   <tr>
     <td><tt>result_var_name</tt> string</td>
-    <td>A string containing a list of terms you wish to output into the result file. For example, you are running the following model:
-
-</tt>fnbmd ~ y + y*age + age + sex + height</tt>
-
-If result_var_name is left blank, then assoctool will output the statistics for y (i.e., the marker), y*age, age, sex, and height (i.e., everything). Suppose you are interested in the statistics of the marker and its interaction with age. Then, you would fill in "</tt>y,y:age</tt>" here.</td>
+    <td>A string containing a list of terms you wish to output into the result file. For example, you are running the following model:<br>
+<tt>fnbmd ~ y + y*age + age + sex + height</tt><br>
+If <tt>result_var_name</tt> is left blank, then assoctool will output the statistics for y (i.e., the marker), y*age, age, sex, and height (i.e., everything). Suppose you are interested in the statistics of the marker and its interaction with age. Then, you would fill in "<tt>y,y:age</tt>" here.</td>
   </tr>
   <tr>
     <td><tt>factors_list</tt> string</td>
@@ -267,23 +262,23 @@ If result_var_name is left blank, then assoctool will output the statistics for 
   </tr>
   <tr>
     <td><tt>gds_var_id</tt> string</td>
-    <td>Field name indicating variant ID. By default it is "</tt>variant.id</tt>". If you have a GDS file not prepared by seqVCF2GDS (of seqArray R package), then the resulting GDS file may be structured differently and thus you need to specify which field contains variant ID name.</td>
+    <td>Field name indicating variant ID. By default it is "<tt>variant.id</tt>". If you have a GDS file not prepared by seqVCF2GDS (of seqArray R package), then the resulting GDS file may be structured differently and thus you need to specify which field contains variant ID name.</td>
   </tr>
   <tr>
     <td><tt>gds_sample_id</tt> string</td>
-    <td>Field name indicating sample ID. By default it is "</tt>sample.id</tt>".</td>
+    <td>Field name indicating sample ID. By default it is "<tt>sample.id</tt>".</td>
   </tr>
   <tr>
     <td><tt>gds_chrom_id</tt> string</td>
-    <td>Field name indicating chromosome name for each variant. Default to "</tt>chromosome</tt>"</td>
+    <td>Field name indicating chromosome name for each variant. Default to "<tt>chromosome</tt>"</td>
   </tr>
   <tr>
     <td><tt>gds_pos_id</tt> string</td>
-    <td>Field name indicating position of each variant. Default to "</tt>position</tt>"</td>
+    <td>Field name indicating position of each variant. Default to "<tt>position</tt>"</td>
   </tr>
   <tr>
     <td><tt>gds_allele_id</tt> string</td>
-    <td>Field name indicating the alleles for each variant. Default to "</tt>allele</tt>"</td>
+    <td>Field name indicating the alleles for each variant. Default to "<tt>allele</tt>"</td>
   </tr>
   <tr>
     <td>ADVANCED (For custom analysis model not covered above)</td>
