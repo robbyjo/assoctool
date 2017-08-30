@@ -87,27 +87,27 @@ This app runs single marker analysis in parallel.
     <td></td>
   </tr>
   <tr>
-    <td>`omics_file`  file</td>
+    <td><tt>omics_file</tt>  file</td>
     <td>Omics file. For GWAS, this should be a GDS file. For any others (TWAS / EWAS / microbiome), you can use txt / csv / RDa / RDs format</td>
   </tr>
   <tr>
-    <td>`pheno_file`  file</td>
-    <td>Phenotypic file in txt / csv format containing all covariates to use in the model. Must contain an ID column (which is by default assumed to be named "ID" --- this default can be changed; see advanced options) to match with the omics file. Note that any columns not named according to R convention will be automatically renamed (e.g., column `age-orig` will be renamed `age.orig`, as per R convention) </td>
+    <td><tt>pheno_file</tt>  file</td>
+    <td>Phenotypic file in txt / csv format containing all covariates to use in the model. Must contain an ID column (which is by default assumed to be named "ID" --- this default can be changed; see advanced options) to match with the omics file. Note that any columns not named according to R convention will be automatically renamed (e.g., column <tt>age-orig</tt> will be renamed <tt>age.orig</tt>, as per R convention) </td>
   </tr>
   <tr>
-    <td>`formula`  string</td>
+    <td><tt>formula</tt>  string</td>
     <td>The formula for your analysis. By default the marker is called "y" (again, default can be changed in advanced options). Example:
-1. `fnbmd ~ y + y*age + age + sex + height`
+1. <tt>fnbmd ~ y + y*age + age + sex + height</tt>
 Here is a typical GWAS on femoral neck BMD. The SNP is called y here and this model can account for interaction with age.
-2. `y ~ smoking + snp_chrna3 + age + sex + (1|batch)`
-Here is a typical TWAS/EWAS analysis, where `y` is the expression / methylation levels. The batch term is specifically cast as random effect </td>
+2. <tt>y ~ smoking + snp_chrna3 + age + sex + (1|batch)</tt>
+Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methylation levels. The batch term is specifically cast as random effect </td>
   </tr>
   <tr>
-    <td>`analysis_type`  combo</td>
+    <td><tt>analysis_type</tt>  combo</td>
     <td>Specify analysis type (one of GWAS, Epigenome, Transcriptome, Protein, Metabolite, Microbiome, Generic). For GWAS analysis, the app will also compute Minimum Allele Frequency information per variant. In version 0.0.1, analyses other than GWAS have no difference.</td>
   </tr>
   <tr>
-    <td>`method`  combo</td>
+    <td><tt>method</tt>  combo</td>
     <td>Specify which method to use:
 1. LM for linear fixed effect model
 2. LMM for linear mixed effect model
@@ -143,27 +143,27 @@ Here is a typical TWAS/EWAS analysis, where `y` is the expression / methylation 
     <td></td>
   </tr>
   <tr>
-    <td>`pedigree_file`  file</td>
+    <td><tt>pedigree_file</tt>  file</td>
     <td>File containing pedigree information</td>
   </tr>
   <tr>
-    <td>`pedigree_type`  combo</td>
+    <td><tt>pedigree_type</tt>  combo</td>
     <td>Specify what the pedigree format is: whether it is kinship1, kinship2, or pedigree mm format or sparse / dense matrix. In case of matrix format, the pedigree file is expected to be in rds format. In case of the others (kinship1 or 2 or pedigreemm), they are expected to be in text files (txt / csv) and then you need to specify the ID column of the text file for participant, father, and mother. See advanced options.</td>
   </tr>
   <tr>
-    <td>`annot_file`  file</td>
+    <td><tt>annot_file</tt>  file</td>
     <td>File containing annotation information. If you want to filter the markers by annotation (e.g., by position), you can do so by loading annotation file</td>
   </tr>
   <tr>
-    <td>`annot_marker_id`  string</td>
+    <td><tt>annot_marker_id</tt>  string</td>
     <td>The column name in the annotation file containing the ID for the marker (that you can link to your main omics file).</td>
   </tr>
   <tr>
-    <td>`annot_filter_criteria`  string</td>
-    <td>A string containing an R expression to select which marker to include. Example: `Position >= 1000000 && Position <= 2000000`. This means that markers that lie within 1MB to 2MB position will be included in the analysis. Obviously, you will need to have a column called `Position` in your annotation file to make it work.</td>
+    <td><tt>annot_filter_criteria</tt>  string</td>
+    <td>A string containing an R expression to select which marker to include. Example: <tt>Position >= 1000000 && Position <= 2000000</tt>. This means that markers that lie within 1MB to 2MB position will be included in the analysis. Obviously, you will need to have a column called <tt>Position</tt> in your annotation file to make it work.</td>
   </tr>
   <tr>
-    <td>`annot_cols`  string</td>
+    <td><tt>annot_cols</tt>  string</td>
     <td>If you wish your result file come pre-annotated using the annotation file, you can specify which columns to include. This is a comma-separated list specifying different columns in the annotation file.</td>
   </tr>
   <tr>
@@ -171,23 +171,23 @@ Here is a typical TWAS/EWAS analysis, where `y` is the expression / methylation 
     <td></td>
   </tr>
   <tr>
-    <td>`maf_threshold` float</td>
+    <td><tt>maf_threshold</tt> float</td>
     <td>Minimum Allele Frequency (MAF) threshold under which the marker will not be analyzed. By default it is not specified. Applicable only for GWAS analysis. If you want to analyze only markers with MAF>=5%, then you put 0.05 here.</td>
   </tr>
   <tr>
-    <td>`mac_threshold` integer</td>
+    <td><tt>mac_threshold</tt> integer</td>
     <td>Minimum Allele Count (MAC) threshold under which the marker will not be analyzed. By default it is set to 1. Applicable only for GWAS analysis. If you want to analyze only markers with MAC>=5, then you put 5 here.</td>
   </tr>
   <tr>
-    <td>`chromosome` string</td>
+    <td><tt>chromosome</tt> string</td>
     <td>Specify which chromosome the markers are in. Applicable only for GWAS analysis. This information is used to correctly compute MAF. Enter X, Y, or MT for X, Y, or mitochondrial chromosome. Anything else will be treated as autosome. This is not needed if you have a GDS file format because GDS file contains chromosome field built-in (see GDS format section).</td>
   </tr>
   <tr>
-    <td>`sex` string</td>
+    <td><tt>sex</tt> string</td>
     <td>Column name in phenotype file that indicates sex. Only applicable for GWAS analyses; ignored for other analysis types. MUST be encoded as M or F to indicate males and females, respectively (again, only for GWAS case). This is only used to compute MAF / MAC.</td>
   </tr>
   <tr>
-    <td>`impute_genotype` boolean</td>
+    <td><tt>impute_genotype</tt> boolean</td>
     <td>Whether or not missing genotype data should be imputed or not. If set to true, then missing genotype will be set to MAF</td>
   </tr>
   <tr>
@@ -195,23 +195,23 @@ Here is a typical TWAS/EWAS analysis, where `y` is the expression / methylation 
     <td></td>
   </tr>
   <tr>
-    <td>`pedigree_id` string</td>
-    <td>The name of column in pedigree file indicating participant ID. By default this is also called "`ID`". Applicable only for kinship / pedigreemm pedigree format. In kinship / pedigreemm format, pedigree file contains at least three columns, the individual ID, father ID, and mother ID, followed optionally by sex information.</td>
+    <td><tt>pedigree_id</tt> string</td>
+    <td>The name of column in pedigree file indicating participant ID. By default this is also called "</tt>ID</tt>". Applicable only for kinship / pedigreemm pedigree format. In kinship / pedigreemm format, pedigree file contains at least three columns, the individual ID, father ID, and mother ID, followed optionally by sex information.</td>
   </tr>
   <tr>
-    <td>`pedigree_father` string</td>
-    <td>The name of column in pedigree file indicating the ID of the father of the subject. By default this is called "`father`". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td><tt>pedigree_father</tt> string</td>
+    <td>The name of column in pedigree file indicating the ID of the father of the subject. By default this is called "</tt>father</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
-    <td>`pedigree_mother` string</td>
-    <td>The name of column in pedigree file indicating the ID of the mother of the subject. By default this is called "`mother`". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td><tt>pedigree_mother</tt> string</td>
+    <td>The name of column in pedigree file indicating the ID of the mother of the subject. By default this is called "</tt>mother</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
-    <td>`pedigree_sex` string</td>
-    <td>The name of column in pedigree file indicating the sex of the. By default this is called "`sex`". Applicable only for kinship / pedigreemm pedigree format.</td>
+    <td><tt>pedigree_sex</tt> string</td>
+    <td>The name of column in pedigree file indicating the sex of the. By default this is called "</tt>sex</tt>". Applicable only for kinship / pedigreemm pedigree format.</td>
   </tr>
   <tr>
-    <td>`pedigree_id_col` string</td>
+    <td><tt>pedigree_id_col</tt> string</td>
     <td>If for some reason the pedigree file is specified using a different set of ID numbers than the one specified in the phenotypic data (a common situation in clinical setting), then you need to provide a linker ID column name in here. In case of Framingham Heart Study cohort, the pedigree is often provided using SabreID, while the genotype data is available in ShareID. The pedigree file contains the pedigree_id, pedigree_father, and pedigree_mother in SabreID, then we add another column ShareID to link to the phenotype file. In this case, we fill in ShareID here.</td>
   </tr>
   <tr>
@@ -219,46 +219,46 @@ Here is a typical TWAS/EWAS analysis, where `y` is the expression / methylation 
     <td></td>
   </tr>
   <tr>
-    <td>`fn_param_list` string</td>
+    <td><tt>fn_param_list</tt> string</td>
     <td>A string containing a list of parameters that you wish to pass to the main analysis function. Example use of this would be to specify the family and link for GLM / GLMM type analysis. If you want to do weighted binomial GLM with logit link, you would put in the following text:
 
-`family=binomial(link="logit"), weights=pdata[, "Weight"]`
+</tt>family=binomial(link="logit"), weights=pdata[, "Weight"]</tt>
 
-The pdata is the object in which phenotype data is stored. Certainly, for this example, you will need to make sure that the phenotype file contains a column called `Weight`.
+The pdata is the object in which phenotype data is stored. Certainly, for this example, you will need to make sure that the phenotype file contains a column called <tt>Weight</tt>.
 This string will be passed to the glm function (along with formula and the pdata).</td>
   </tr>
   <tr>
-    <td>`tx_fun` string</td>
+    <td><tt>tx_fun</tt> string</td>
     <td>Transformation function, specified in R format. In EWAS / TWAS / Microbiome analysis, sometimes it is necessary to transform the marker due to non conformance to normality. One example of such transformation is the inverse normal transform (INT), which can be specified as:
 
-`function(x) qqnorm(as.numeric(x), plot.it=FALSE)$x`
+</tt>function(x) qqnorm(as.numeric(x), plot.it=FALSE)$x</tt>
 
 Or, Z-transform, which can be specified as:
 
-`function(x) scale(as.numeric(x), center=TRUE, scale=TRUE)`</td>
+</tt>function(x) scale(as.numeric(x), center=TRUE, scale=TRUE)</tt></td>
   </tr>
   <tr>
-    <td>`id_col` string</td>
-    <td>The name of column in phenotype file indicating subject ID. By default this is called "`ID`". If you name it something else (e.g., SabreID), then you should specify it here</td>
+    <td><tt>id_col</tt> string</td>
+    <td>The name of column in phenotype file indicating subject ID. By default this is called "</tt>ID</tt>". If you name it something else (e.g., SabreID), then you should specify it here</td>
   </tr>
   <tr>
-    <td>`omics_var_name` string</td>
-    <td>By default, the omics will be called "`y`" in formula. If you wish to call the omics something else in the formula (for clarity), then you specify it here</td>
+    <td><tt>omics_var_name</tt> string</td>
+    <td>By default, the omics will be called "</tt>y</tt>" in formula. If you wish to call the omics something else in the formula (for clarity), then you specify it here</td>
   </tr>
   <tr>
-    <td>`compute_fdr` boolean</td>
+    <td><tt>compute_fdr</tt> boolean</td>
     <td>If set to true, then Benjamini & Hochberg's False Discovery Rate (FDR) will be computed for each p-value column.</td>
   </tr>
   <tr>
-    <td>`result_var_name` string</td>
+    <td><tt>result_var_name</tt> string</td>
     <td>A string containing a list of terms you wish to output into the result file. For example, you are running the following model:
 
-`fnbmd ~ y + y*age + age + sex + height`
+</tt>fnbmd ~ y + y*age + age + sex + height</tt>
 
-If result_var_name is left blank, then assoctool will output the statistics for y (i.e., the marker), y*age, age, sex, and height (i.e., everything). Suppose you are interested in the statistics of the marker and its interaction with age. Then, you would fill in "`y,y:age`" here.</td>
+If result_var_name is left blank, then assoctool will output the statistics for y (i.e., the marker), y*age, age, sex, and height (i.e., everything). Suppose you are interested in the statistics of the marker and its interaction with age. Then, you would fill in "</tt>y,y:age</tt>" here.</td>
   </tr>
   <tr>
-    <td>`factors_list` string</td>
+    <td><tt>factors_list</tt> string</td>
     <td>A comma separated list of column names in phenotype file that should be treated as factors, rather than integers. By default, phenotype file will be loaded as data.frame. R usually guesses the data type for each column. If a column, say batch number, is entirely integer, then R will treat it as numeric. In regression equation, treating batch as numeric variable will be wrong. To override that behavior, you specify which columns should be treated as factors. In terms of R code, basically assoctool will iterate the list and apply as.factor function to each column.</td>
   </tr>
   <tr>
@@ -266,31 +266,31 @@ If result_var_name is left blank, then assoctool will output the statistics for 
     <td></td>
   </tr>
   <tr>
-    <td>`gds_var_id` string</td>
-    <td>Field name indicating variant ID. By default it is "`variant.id`". If you have a GDS file not prepared by seqVCF2GDS (of seqArray R package), then the resulting GDS file may be structured differently and thus you need to specify which field contains variant ID name.</td>
+    <td><tt>gds_var_id</tt> string</td>
+    <td>Field name indicating variant ID. By default it is "</tt>variant.id</tt>". If you have a GDS file not prepared by seqVCF2GDS (of seqArray R package), then the resulting GDS file may be structured differently and thus you need to specify which field contains variant ID name.</td>
   </tr>
   <tr>
-    <td>`gds_sample_id` string</td>
-    <td>Field name indicating sample ID. By default it is "`sample.id`".</td>
+    <td><tt>gds_sample_id</tt> string</td>
+    <td>Field name indicating sample ID. By default it is "</tt>sample.id</tt>".</td>
   </tr>
   <tr>
-    <td>`gds_chrom_id` string</td>
-    <td>Field name indicating chromosome name for each variant. Default to "`chromosome`"</td>
+    <td><tt>gds_chrom_id</tt> string</td>
+    <td>Field name indicating chromosome name for each variant. Default to "</tt>chromosome</tt>"</td>
   </tr>
   <tr>
-    <td>`gds_pos_id` string</td>
-    <td>Field name indicating position of each variant. Default to "`position`"</td>
+    <td><tt>gds_pos_id</tt> string</td>
+    <td>Field name indicating position of each variant. Default to "</tt>position</tt>"</td>
   </tr>
   <tr>
-    <td>`gds_allele_id` string</td>
-    <td>Field name indicating the alleles for each variant. Default to "`allele`"</td>
+    <td><tt>gds_allele_id</tt> string</td>
+    <td>Field name indicating the alleles for each variant. Default to "</tt>allele</tt>"</td>
   </tr>
   <tr>
     <td>ADVANCED (For custom analysis model not covered above)</td>
     <td></td>
   </tr>
   <tr>
-    <td>`analysis_code` file</td>
+    <td><tt>analysis_code</tt> file</td>
     <td>If you choose a CUSTOM analysis method, you will need to upload your own R code in here. This app expects the code to contain a function called doOne, with two parameters: i and mdata. The variable i indicates the index of the marker in mdata matrix. This function must return the statistics for marker i. For an example, you can view assoctool's lm.R file.</td>
   </tr>
   <tr>
@@ -303,23 +303,23 @@ If result_var_name is left blank, then assoctool will output the statistics for 
 Variables mdata and ped can be of any object AS LONG AS the analysis code understands them. Assoctool's default for mdata is matrix object, and ped can be either matrix or kinship/pedigreemm object.
 
 If you custom-load the data, you can then skip assoctool's default loading data routine by setting appropriate flag:
-1. `opt$skip_loading_omics` --> If set to `TRUE`, assoctool will skip loading omics file.
-2. `opt$skip_loading_phenotype` --> If set to `TRUE`, assoctool will skip loading phenotype file.
-3. `opt$skip_loading_pedigree` --> If set to `TRUE`, assoctool will skip loading pedigree file.
-4. `opt$skip_loading_annotation` --> If set to `TRUE`, assoctool will skip loading annotation file.</td>
+1. <tt>opt$skip_loading_omics</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading omics file.
+2. <tt>opt$skip_loading_phenotype</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading phenotype file.
+3. <tt>opt$skip_loading_pedigree</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading pedigree file.
+4. <tt>opt$skip_loading_annotation</tt> --> If set to <tt>TRUE</tt>, assoctool will skip loading annotation file.</td>
   </tr>
   <tr>
-    <td>`prologue_code` file</td>
+    <td><tt>prologue_code</tt> file</td>
     <td>If you have a custom library to load or prepare the dataset differently, this is the place. The R code specified here will be run AFTER the loading of all datasets, but BEFORE any analysis run. An example use is to define the get function in assoctool, which is defined as follows:
 
-`get <- function(mat, i) txFun(as.numeric(mat[i, ]));`
+</tt>get <- function(mat, i) txFun(as.numeric(mat[i, ]));</tt>
 
 This function extracts marker i from omics data mat, assuming that mat is a matrix and that the markers are stored row wise. If you have different arrangement, this is where to override it.
 
-Another use of a prologue code is to define ID matching between omics data and phenotype data. By default, assoctool will attempt to match by ID as specified by `id_col`. However, this process is not foolproof and that you may have duplicate IDs that have to be resolved differently (such as ID joining of sort in repeat measures data, for example). If you define the data matching differently, then you will need to set `opt$skip_matching` to TRUE.</td>
+Another use of a prologue code is to define ID matching between omics data and phenotype data. By default, assoctool will attempt to match by ID as specified by <tt>id_col</tt>. However, this process is not foolproof and that you may have duplicate IDs that have to be resolved differently (such as ID joining of sort in repeat measures data, for example). If you define the data matching differently, then you will need to set <tt>opt$skip_matching</tt> to TRUE.</td>
   </tr>
   <tr>
-    <td>`epilogue_code` file</td>
+    <td><tt>epilogue_code</tt> file</td>
     <td>If filled, this is an R code that will be executed AFTER analysis is run. A good use case for this is to pare down unused columns, or to use your favorite False Discovery Rate routine on certain p-values.</td>
   </tr>
   <tr>
@@ -327,32 +327,32 @@ Another use of a prologue code is to define ID matching between omics data and p
     <td></td>
   </tr>
   <tr>
-    <td>`compress_output` string</td>
+    <td><tt>compress_output</tt> string</td>
     <td>Set to none if you do not wish to compress the output. You can choose GZIP, BZ2, or XZ compression if you do.</td>
   </tr>
   <tr>
-    <td>`save_as_binary` boolean</td>
+    <td><tt>save_as_binary</tt> boolean</td>
     <td>Save the result file as a binary file (RDS format) that you can later load in R using readRDS function. If you choose to save as binary, please disable the compression option above because R automatically compress the binary file.</td>
   </tr>
   <tr>
-    <td>`from` integer; 
-`to` integer</td>
-    <td>If you decide to only analyze a subset of markers, you can specify that here. This is useful to distribute the computational load of one file to several servers. Example: Server 1 compute markers 1 to 100000 --> `from=1, to=100000`; Server 2 compute markers 100001 to 200000, etc.</td>
+    <td><tt>from</tt> integer; 
+</tt>to</tt> integer</td>
+    <td>If you decide to only analyze a subset of markers, you can specify that here. This is useful to distribute the computational load of one file to several servers. Example: Server 1 compute markers 1 to 100000 --> <tt>from=1, to=100000</tt>; Server 2 compute markers 100001 to 200000, etc.</td>
   </tr>
   <tr>
-    <td>`block_size` integer</td>
+    <td><tt>block_size</tt> integer</td>
     <td>Assoctool tries to load the omics data file per block because the file tends to be very big and do not fit in RAM simultaneously. This parameter specifies how many markers assoctool may load at a time. By default it is set to 2500. If your run returns with an out of memory error, try reducing this block size.</td>
   </tr>
   <tr>
-    <td>`num_cores` integer</td>
+    <td><tt>num_cores</tt> integer</td>
     <td>The number of cores that you want to use for computation. Defaults to the maximum number available in that server.</td>
   </tr>
   <tr>
-    <td>`load_all` boolean</td>
+    <td><tt>load_all</tt> boolean</td>
     <td>If set to true, then assoctool will attempt to load the entirety of omics data to memory. Useful if the data file is relatively small. If this option is set to true, then block_size will be ignored.</td>
   </tr>
   <tr>
-    <td>`debug` integer</td>
+    <td><tt>debug</tt> integer</td>
     <td>Set 0 to disable debug. Higher number increases verbosity of debug message.</td>
   </tr>
 </table>
@@ -362,7 +362,7 @@ Another use of a prologue code is to define ID matching between omics data and p
 
 <table>
   <tr>
-    <td>output_file  string</td>
+    <td><tt>output_file</tt>  string</td>
     <td>The desired name for your output file. This output will contain all the statistics of all markers desired.</td>
   </tr>
 </table>
