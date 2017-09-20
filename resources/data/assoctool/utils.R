@@ -143,7 +143,7 @@ isLeftTerm <- function(ff, term) {
 
 # Is term in the right side of formula ff or not
 isRightTerm <- function(ff, term) {
-	return (length(grep(term, ff[[2]])) > 0);
+	return (length(grep(term, ff[[3]])) > 0);
 }
 
 # Pedigree construction; for pedigreemm only
