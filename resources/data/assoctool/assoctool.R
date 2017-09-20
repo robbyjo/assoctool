@@ -132,7 +132,7 @@ args <- processArgs(commandArgs(trailingOnly=TRUE));
 	
 	# Parameter validation / sanity check before any loading takes place
 	opt$recognized_analysis <- c("gwas", "epigenome", "transcriptome", "protein", "metabolite", "microbiome", "generic");
-	opt$recognized_methods <- c("lm", "lmm", "glm", "glmm", "pedigreemm", "kinship1", "kinship2", "nls", "nlmm", "logistf", "rlm", "polr", "survival", "coxme", "gee", "geeglm", "ordgee", "zeroinfl", "glmnb", "censreg", "truncreg", "betareg", "quantreg", "mlogit", "relogit", "gamlss", "zelig", "custom");
+	opt$recognized_methods <- c("lm", "lmm", "glm", "glmm", "pedigreemm", "kinship1", "kinship2", "nls", "nlmm", "logistf", "rlm", "rlmm", "polr", "survival", "coxme", "gee", "geeglm", "ordgee", "zeroinfl", "glmnb", "censreg", "truncreg", "betareg", "quantreg", "mlogit", "relogit", "gamlss", "zelig", "custom");
 	opt$recognized_pedigree <- c("pedigreemm", "kinship1", "kinship2", "sparse_matrix", "dense_matrix");
 
 	if (is.na(opt$met_file)) stop("Omics file is missing!");

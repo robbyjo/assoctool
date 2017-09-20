@@ -92,7 +92,7 @@
       "help": "Method string. If you specify custom method, MAKE SURE you fill in analysis code.",
       "class": "string",
       "optional": false,
-	  "choices": ["LM", "LMM", "GLM", "GLMM", "NLS", "NLMM", "PEDIGREEMM", "KINSHIP1", "KINSHIP2", "LOGISTF", "RLM", "POLR", "SURVIVAL", "COXME", "GEE", "GEEGLM", "ORDGEE", "ZEROINFL", "GLMNB", "CENSREG", "TRUNCREG", "BETAREG", "QUANTREG", "MLOGIT", "RELOGIT", "GAMLSS", "ZELIG", "CUSTOM"],
+	  "choices": ["LM", "LMM", "GLM", "GLMM", "NLS", "NLMM", "PEDIGREEMM", "KINSHIP1", "KINSHIP2", "LOGISTF", "RLM", "RLMM", "POLR", "SURVIVAL", "COXME", "GEE", "GEEGLM", "ORDGEE", "ZEROINFL", "GLMNB", "CENSREG", "TRUNCREG", "BETAREG", "QUANTREG", "MLOGIT", "RELOGIT", "GAMLSS", "ZELIG", "CUSTOM"],
       "default": "LMM"
     },
     {
