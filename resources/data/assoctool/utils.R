@@ -146,6 +146,36 @@ isRightTerm <- function(ff, term) {
 	return (length(grep(term, ff[[3]])) > 0);
 }
 
+# Remove a term from a formula
+# Test: ff <- y ~ x1 + x2 + x3 + (1 | batch)
+# removeTerm(ff, "x1");
+# removeTerm(ff, "batch");
+# removeTerm(y ~ (x1+ x2) + (x3) + 1|batch, "x3");
+removeTerm <- function(ff, term) {
+	form <- ff;
+	rmTerm <- function(f1) {
+		#print(f1);
+		if (!(term %in% all.names(f1))) return(f1);
+		if (is.call(f1) && f1[[1]] == as.name('|') && f1[[3]] == as.name(term)) return(NULL);
+		if (length(f1) == 2) {
+			nb <- rmTerm(f1[[2]]);
+			if (is.null(nb)) return(NULL);
+			f1[[2]] <- nb;
+			return(f1);
+		}
+		if (f1 == as.name(term)) return(NULL); # This is the term we want to remove
+		nb2 <- rmTerm(f1[[2]]);
+		nb3 <- rmTerm(f1[[3]]);
+		if (is.null(nb2)) return(nb3);
+		if (is.null(nb3)) return(nb2);
+		f1[[2]] <- nb2;
+		f1[[3]] <- nb3;
+		f1;
+	}
+	form[[3]] <- if (is.null(nb <- rmTerm(form[[3]]))) 1 else nb;
+	return(form);
+}
+
 # Pedigree construction; for pedigreemm only
 constructPedigree <- function(all_ids, dad_ids, mom_ids) {
 	library(pedigreemm);
