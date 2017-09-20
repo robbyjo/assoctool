@@ -136,6 +136,16 @@ combineFormulas <- function(f1, f2, op="+") {
 	return(formula(paste(ff[[2]], ff[[1]], ff[[3]], op, paste(deparse(f2[[3]]), collapse=""))));
 }
 
+# Is term in the left side of formula ff or not
+isLeftTerm <- function(ff, term) {
+	return (ff[[2]] == term);
+}
+
+# Is term in the right side of formula ff or not
+isRightTerm <- function(ff, term) {
+	return (length(grep(term, ff[[2]])) > 0);
+}
+
 # Pedigree construction; for pedigreemm only
 constructPedigree <- function(all_ids, dad_ids, mom_ids) {
 	library(pedigreemm);
