@@ -151,12 +151,16 @@ isRightTerm <- function(ff, term) {
 # removeTerm(ff, "x1");
 # removeTerm(ff, "batch");
 # removeTerm(y ~ (x1+ x2) + (x3) + 1|batch, "x3");
+# removeTerm(y ~ (x1+ x2) + (x3) + 1|batch, "batch");
 removeTerm <- function(ff, term) {
 	form <- ff;
 	rmTerm <- function(f1) {
 		#print(f1);
 		if (!(term %in% all.names(f1))) return(f1);
-		if (is.call(f1) && f1[[1]] == as.name('|') && f1[[3]] == as.name(term)) return(NULL);
+		if (is.call(f1) && f1[[1]] == as.name('|') && f1[[3]] == as.name(term)) {
+			if (is.call(f1[[2]])) return(f1[[2]]);
+			return(NULL);
+		}
 		if (length(f1) == 2) {
 			nb <- rmTerm(f1[[2]]);
 			if (is.null(nb)) return(NULL);
