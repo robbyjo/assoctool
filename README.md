@@ -120,7 +120,8 @@ Here is a typical TWAS/EWAS analysis, where <tt>y</tt> is the expression / methy
 <li>KINSHIP1 for linear mixed effect model with pedigree structure using kinship1 package</li>
 <li>KINSHIP2 for linear mixed effect model with pedigree structure using kinship2 package</li>
 <li>LOGISTF for Firth's logistic regression</li>
-<li>RLM for robust linear model</li>
+<li>RLM for robust linear fixed effect model</li>
+<li>RLMM for robust linear mixed effect model</li>
 <li>POLR for proportional odds logistic regression</li>
 <li>SURVIVAL for fixed effect survival model</li>
 <li>COXME for fixed or mixed effect survival model with or without pedigree</li>
