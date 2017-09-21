@@ -21,7 +21,7 @@ Assoctool is a very versatile single marker association analysis app. Current su
 
 3. Non-linear fixed or mixed effect model
 
-4. Robust linear model
+4. Robust linear fixed or mixed model
 
 5. Survival model
 
