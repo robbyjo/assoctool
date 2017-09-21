@@ -33,18 +33,14 @@ doOne <- function(i, mdata) {
 	suppressMessages(result <- do.call(gee, param_list));
 	tbl <- summary(result)$coef[, c(1,4,5)]; # Always the robust estimate
 
-	sst <- var(result$y) * (length(result$y) - 1);
-	ssr <- tbl[,3]^2 * (sum(result$residuals^2) / (result$nobs - length(result$coefficients)));
-	rsq <- ssr / sst;
-
-	# Returns P-value, Effect size, Standard Error, Z-statistics, R^2
-	result <- cbind(2*pnorm(abs(tbl[,3]), lower.tail=FALSE), tbl[,1], tbl[,2], tbl[,3], rsq);
+	# Returns P-value, Effect size, Standard Error, Z-statistics
+	result <- cbind(2*pnorm(abs(tbl[,3]), lower.tail=FALSE), tbl[,1], tbl[,2], tbl[,3]);
 	if (rownames(result)[1] == "(Intercept)") result <- result[-1,];
 	if (!is.null(opt$result_var_name)) {
 		if (is.null(..patterns)) ..patterns <<- rownames(result)[grep(opt$result_var_pattern, rownames(result))];
 		result <- result[..patterns,];
 	}
 	if (NROW(result) > 1) result <- as.vector(t(result));
-	names(result) <- paste(rep(c("P", "Fx", "SE", "Z", "RSq"), length(..patterns)), rep(..patterns, each=5), sep="_");
+	names(result) <- paste(rep(c("P", "Fx", "SE", "Z"), length(..patterns)), rep(..patterns, each=4), sep="_");
 	return (result);
 }

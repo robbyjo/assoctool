@@ -43,7 +43,7 @@ doOne <- function(i, mdata) {
 	tbl <- summary(result)$coef;
 	
 	sst <- var(result@resp$y) * (length(result@resp$y) - 1);
-	ssr <- tbl[,3]^2 * (sum(resid(result)^2) / ..DFE);
+	ssr <- tbl[,3]^2 * (sum(result@resp$weights * resid(result)^2) / ..DFE);
 	rsq <- ssr / sst;
 	
 	# Returns P-value, Effect size, Standard Error, T-statistics, R^2

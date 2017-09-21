@@ -35,12 +35,8 @@ doOne <- function(i, mdata) {
 	result <- do.call(geeglm, param_list);
 	tbl <- summary(result)$coef;
 
-	sst <- var(result$y) * (length(result$y) - 1);
-	ssr <- tbl[,3]^2 * (sum(result$residuals^2) / result$df.residual);
-	rsq <- ssr / sst;
-
-	# Returns P-value, Effect size, Standard Error, Z-statistics, R^2
-	result <- cbind(tbl[,4], tbl[,1], tbl[,2], tbl[,3], rsq);
+	# Returns P-value, Effect size, Standard Error, Z-statistics
+	result <- cbind(tbl[,4], tbl[,1], tbl[,2], tbl[,3]);
 	rownames(result) <- rownames(tbl);
 	if (rownames(result)[1] == "(Intercept)") result <- result[-1,];
 	if (!is.null(opt$result_var_name)) {
@@ -48,6 +44,6 @@ doOne <- function(i, mdata) {
 		result <- result[..patterns,];
 	}
 	if (NROW(result) > 1) result <- as.vector(t(result));
-	names(result) <- paste(rep(c("P", "Fx", "SE", "Z", "RSq"), length(..patterns)), rep(..patterns, each=5), sep="_");
+	names(result) <- paste(rep(c("P", "Fx", "SE", "Z"), length(..patterns)), rep(..patterns, each=4), sep="_");
 	return (result);
 }

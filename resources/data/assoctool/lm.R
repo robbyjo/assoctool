@@ -27,7 +27,11 @@ doOne <- function(i, mdata) {
 	# attr(result$terms, "response") seems to be always 1
 	reduced_y <- result$model[, 1];
 	sst <- var(reduced_y) * (length(reduced_y) - 1);
-	ssr <- tbl[,3]^2 * (sum(resid(result)^2) / result$df.residual);
+	if (!is.null(weights(result))) {
+		ssr <- tbl[,3]^2 * (sum(weights(result) * resid(result)^2) / result$df.residual);
+	} else {
+		ssr <- tbl[,3]^2 * (sum(resid(result)^2) / result$df.residual);
+	}
 	rsq <- ssr / sst;
 	
 	# Returns P-value, Effect size, Standard Error, T-statistics, R^2

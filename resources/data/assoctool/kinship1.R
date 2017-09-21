@@ -50,6 +50,7 @@ doOne <- function(i, mdata) {
 	if (opt$use_pt) {
 		tbl[,4] <- 2*pt(abs(tbl[,3]), result$df.residual, lower.tail=FALSE);
 	}
+	# TODO: As of kinship-1.1.3 (the last version of kinship1), lmekin of kinship1 ignores weight option
 	#reduced_y <- result$model[, attr(result$terms, "response")];
 	# attr(result$terms, "response") seems to be always 1
 	reduced_y <- result$fitted.values + result$residuals;

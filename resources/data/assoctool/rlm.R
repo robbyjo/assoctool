@@ -35,7 +35,11 @@ doOne <- function(i, mdata) {
 	result <- do.call(lmRob, param_list);
 	sst <- var(result$y) * (length(result$y) - 1);
 	tbl <- summary(result)$coef;
-	ssr <- unlist(lapply(1:NROW(tbl), function (x) sum(as.vector(result$x[,x]) * tbl[x, 1]^2)));
+	if ("weights" %in% names(result)) {
+		ssr <- unlist(lapply(1:NROW(tbl), function (x) sum(result$weights * as.vector(result$x[,x])) * tbl[x, 1]^2));
+	} else {
+		ssr <- unlist(lapply(1:NROW(tbl), function (x) sum(as.vector(result$x[,x])) * tbl[x, 1]^2));
+	}
 	rsq <- ssr / sst;
 	# Returns P-value, Effect size, Standard Error, T-statistics, R^2
 	result <- cbind(tbl[,4], tbl[,1], tbl[,2], tbl[,3], rsq);

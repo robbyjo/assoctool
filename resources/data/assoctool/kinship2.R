@@ -61,6 +61,7 @@ doOne <- function(i, mdata) {
 		pval <- pchisq(zval^2, df=1, lower.tail=FALSE);
 	}
 	
+	# TODO: As of September 2017, lmekin of kinship2 ignores weight option
 	#reduced_y <- result$model[, attr(result$terms, "response")];
 	# attr(result$terms, "response") seems to be always 1
 	sst <- var(result$y) * (length(result$y) - 1);

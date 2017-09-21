@@ -35,9 +35,9 @@ doOne <- function(i, mdata) {
 	param_list$data[, opt$omics_var_name] <- get(mdata, i);
 	result <- do.call(rlmer, param_list);
 	tbl <- summary(result)$coef;
-	
+
 	sst <- var(result@resp$y) * (length(result@resp$y) - 1);
-	ssr <- tbl[,3]^2 * (sum(resid(result)^2) / ..DFE);
+	ssr <- tbl[,3]^2 * (sum(esult@resp$weights * resid(result)^2) / ..DFE);
 	rsq <- ssr / sst;
 	
 	# Returns P-value, Effect size, Standard Error, T-statistics, R^2

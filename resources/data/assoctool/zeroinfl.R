@@ -30,7 +30,7 @@ doOne <- function(i, mdata) {
 	rownames(tbl2)[1] <- paste("ZeroIntercept");
 	
 	sst <- var(result$y) * (length(result$y) - 1);
-	ssr <- tbl1[,3]^2 * (sum(result$residuals^2) / result$df.residual);
+	ssr <- tbl1[,3]^2 * (sum(result$weights * result$residuals^2) / result$df.residual);
 	rsq <- ssr / sst;
 	
 	# Returns P-value, Effect size, Standard Error, Z-statistics, R^2 for the count part
