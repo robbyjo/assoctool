@@ -57,7 +57,9 @@ if (is.null(..weights)) {
 
 ..response <- model.response(..model_fram);
 if (!is.null(..response) & !is.null(..weights)) ..response <- ..response * ..weights;
-if (!..is_lhs) {
+if (..is_lhs) {
+	
+} else {
 	..response <- qr.resid(..qr_pdat, ..response);
 	..res_resid <- sum(..response^2);
 }
@@ -73,8 +75,8 @@ doBlock <- function(i, mdata) {
 	if (..is_lhs) {
 		# This one is slower, but it works with ..weights and/or zero intercept (if needed)
 		beta <- qr.coef(..qr_pdat, mdata); # p x m ; p = num of covariates
-		resid <- qr.resid(..qr_pdat, mdata); # n x m
-		se <- sqrt(..diag_r %o% (colSums(resid^2) / ..DFE)); # p x m ; %o% is outer product
+		var_resid <- colSums(qr.resid(..qr_pdat, mdata)^2); # 1 x m
+		se <- sqrt(..diag_r %o% (var_resid / ..DFE)); # p x m ; %o% is outer product
 
 		# If omics at LHS, we can pick and choose which covariates to output
 		# This step assumes beta and se have row names (double check).
@@ -87,33 +89,20 @@ doBlock <- function(i, mdata) {
 			beta <- beta[..patterns,];
 			se <- se[..patterns,];
 		}
+		# TODO Rsq computation
 	} else {
 		mdata <- qr.resid(..qr_pdat, mdata); # n x m # Residualize the covariants
 		var_resid <- colSums(mdata^2); # 1 x m
-		beta <- (..response %*% mdata) / var_resid; # 1 x m # Beta contains only the coef for omics variable
+		temp <- ..response %*% mdata; # 1 x m
+		rsq <- temp^2 * ..res_resid; # 1 x m
+		beta <- temp / var_resid; # 1 x m # Beta contains only the coef for omics variable
 		se <- sqrt((..res_resid/var_resid - beta^2)/ DFE);
 	}
 
 	tstat <- beta / se;
 	pval <- 2*pt(abs(tstat), df=..DFE, lower.tail=FALSE);
+	# TODO We need to weave these results in.
 
-	param_list$data[, opt$omics_var_name] <- get(mdata, i);
-	result <- do.call(..lmFun, param_list);
-	tbl <- summary(result)$coef;
-	#reduced_y <- result$model[, attr(result$terms, "..response")];
-	# attr(result$terms, "..response") seems to be always 1
-	reduced_y <- result$model[, 1];
-	sst <- var(reduced_y) * (length(reduced_y) - 1);
-	ssr <- tbl[,3]^2 * (sum(resid(result)^2) / result$df.residual);
-	rsq <- ssr / sst;
-	
-	# Returns P-value, Effect size, Standard Error, T-statistics, R^2
-	result <- cbind(tbl[,4], tbl[,1], tbl[,2], tbl[,3], rsq);
-	if (rownames(result)[1] == "(Intercept)") result <- result[-1,];
-	if (!is.null(opt$result_var_name)) {
-		if (is.null(..patterns)) ..patterns <<- rownames(result)[grep(opt$result_var_pattern, rownames(result))];
-		result <- result[..patterns,];
-	}
 	if (NROW(result) > 1) result <- as.vector(t(result));
 	names(result) <- paste(rep(c("P", "Fx", "SE", "T", "RSq"), length(..patterns)), rep(..patterns, each=5), sep="_");
 	
