@@ -1,6 +1,6 @@
 ## **Assoctool**
 
-Maintained by Roby Joehanes ([robyjoehanes@hsl.harvard.edu](mailto:robyjoehanes@hsl.harvard.edu); [robbyjo@gmail.com](mailto:robbyjo@gmail.com)) 
+Maintained by Roby Joehanes ([roby.joehanes@gmail.com](mailto:roby.joehanes@gmail.com)) 
 
 Location: Commons_Development:/assoctool_test/ (will be moved once this app is done)
 
